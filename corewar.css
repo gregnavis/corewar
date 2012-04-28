@@ -1,0 +1,18 @@
+table.mars {
+	background-color: #000;
+}
+
+table.mars td {
+	background-color: #808080;
+	height: 6px;
+	margin: 1px;
+	width: 6px;
+}
+
+table.mars .mars-dat {
+	background-color: #404040;
+}
+
+table.mars .mars-program {
+	background-color: #30e880;
+}
