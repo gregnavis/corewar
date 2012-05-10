@@ -14,12 +14,15 @@
 
             function start(steps) {
                 var interval = 1000 / (steps * this.mars.processes.length);
-                intervalId = setInterval(function () {
-                    if (!mars.step()) {
-                        stop();
-                    }
-                    marsDisplay.updateAllCells();
-                }, interval);
+                intervalId = setInterval(
+                    function () {
+                        if (!mars.step()) {
+                            stop();
+                        }
+                        marsDisplay.updateAll();
+                    },
+                    interval
+                );
             }
 
             function stop() {
@@ -32,12 +35,12 @@
             }
 
             function onstart() {
-                start();
+                start(1);
             }
 
             function onstep() {
                 mars.step();
-                marsDisplay.updateAllCells();
+                marsDisplay.updateAll();
             }
 
             function onstop() {
@@ -47,25 +50,26 @@
             function onreboot() {
                 stop();
                 mars.reboot();
-                marsDisplay.updateAllCells();
+                marsDisplay.updateAll();
                 document.getElementById("programs").innerHTML = "";
             }
 
             function onspawn() {
-                var code = document.getElementById("code").value;
+                var program = document.getElementById("program").value;
                 try {
-                    var opcodes = mars.compileLines(code);
+                    var instructions = mars.compileProgram(program);
                 } catch (e) {
                     alert("cannot compile: " + e);
                     return;
                 }
 
-                mars.spawn(opcodes);
-                marsDisplay.updateAllCells();
+                var owner = "owner" + mars.processes.length;
+                mars.spawn(owner, instructions);
+                marsDisplay.updateAll();
 
                 var programs = document.getElementById("programs");
                 var li = document.createElement("LI");
-                var src = document.createTextNode("program");
+                var src = document.createTextNode("program of " + process.owner);
                 li.appendChild(src);
                 programs.appendChild(li);
             }
@@ -79,8 +83,8 @@
             <button id="step" onclick="onstep()">Step</button>
             <button id="stop" onclick="onstop()">Stop</button>
             <button id="reboot" onclick="onreboot()">Reboot</button>
-            <div id="program">
-                <textarea id="code"></textarea>
+            <div>
+                <textarea id="program"></textarea>
                 <button id="spawn" onclick="onspawn()">Spawn</button>
             </div>
             <ol id="programs"></ol>
