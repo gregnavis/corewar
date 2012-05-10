@@ -1,45 +1,90 @@
 <!DOCTYPE html>
 <html>
-	<head>
+    <head>
         <meta charset="utf-8">
-		<title>Browser Corewar</title>
-		<script src="corewar.js" type="text/javascript"></script>
+        <title>Browser Corewar</title>
+        <script src="corewar.js" type="text/javascript"></script>
         <script type="text/javascript">
             var width = 50;
             var height = 50;
 
-            var mars = new Mars(width * height);
-            var mars_display;
+            var mars;
+            var marsDisplay;
+            var intervalId;
+
+            function start(steps) {
+                var interval = 1000 / (steps * this.mars.processes.length);
+                intervalId = setInterval(function () {
+                    if (!mars.step()) {
+                        stop();
+                    }
+                    marsDisplay.updateAllCells();
+                }, interval);
+            }
+
+            function stop() {
+                clearInterval(intervalId);
+            }
 
             function onload() {
-                mars_display = new MarsDisplay(mars, "core", width, height);
+                mars = new Mars(width * height);
+                marsDisplay = new MarsDisplay(mars, "core", "cell", width, height);
             }
 
             function onstart() {
-                try {
-                    var p = mars.compile_lines(document.getElementById("code1").value);
-                } catch (e) {
-                    alert("program #1: " + e);
-                    return;
-                }
-                mars.spawn(p);
+                start();
+            }
 
+            function onstep() {
+                mars.step();
+                marsDisplay.updateAllCells();
+            }
+
+            function onstop() {
+                stop();
+            }
+
+            function onreboot() {
+                stop();
+                mars.reboot();
+                marsDisplay.updateAllCells();
+                document.getElementById("programs").innerHTML = "";
+            }
+
+            function onspawn() {
+                var code = document.getElementById("code").value;
                 try {
-                    var p = mars.compile_lines(document.getElementById("code2").value);
+                    var opcodes = mars.compileLines(code);
                 } catch (e) {
-                    alert("program #2: " + e);
+                    alert("cannot compile: " + e);
                     return;
                 }
-                mars.spawn(p);
-                mars_display.run(4);
+
+                mars.spawn(opcodes);
+                marsDisplay.updateAllCells();
+
+                var programs = document.getElementById("programs");
+                var li = document.createElement("LI");
+                var src = document.createTextNode("program");
+                li.appendChild(src);
+                programs.appendChild(li);
             }
         </script>
-		<link href="corewar.css" rel="stylesheet" type="text/css">
-	</head>
-	<body onload="onload()">
-		<div id="core"></div>
-        <textarea id="code1"></textarea>
-        <textarea id="code2"></textarea>
-        <button id="start" onclick="onstart()">Start</button>
-	</body>
+        <link href="corewar.css" rel="stylesheet" type="text/css">
+    </head>
+    <body onload="onload()">
+        <div id="core"></div>
+        <div id="ctrl">
+            <button id="start" onclick="onstart()">Start</button>
+            <button id="step" onclick="onstep()">Step</button>
+            <button id="stop" onclick="onstop()">Stop</button>
+            <button id="reboot" onclick="onreboot()">Reboot</button>
+            <div id="program">
+                <textarea id="code"></textarea>
+                <button id="spawn" onclick="onspawn()">Spawn</button>
+            </div>
+            <ol id="programs"></ol>
+            <div id="cell"></div>
+        </div>
+    </body>
 </html>

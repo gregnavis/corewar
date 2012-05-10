@@ -28,6 +28,11 @@ Address.prototype.clone = function () {
 };
 
 
+Address.prototype.toString = function () {
+    return this.mode + this.value;
+};
+
+
 function Cell(opcode, a, b) {
     this.opcode = opcode;
     this.a = a;
@@ -40,6 +45,10 @@ Cell.prototype.isEqual = function (cell) {
 
 Cell.prototype.clone = function () {
     return new Cell(this.opcode, this.a.clone(), this.b.clone());
+};
+
+Cell.prototype.toString = function () {
+    return this.opcode + " " + this.a.toString() + "," + this.b.toString();
 };
 
 
@@ -57,7 +66,7 @@ Mars.prototype.reboot = function () {
 
 // Compilation
 
-Mars.prototype.compile_line = function (line) {
+Mars.prototype.compileLine = function (line) {
     var opcodes = this.getOpcodes().join("|");
     var modes = this.getModes().join("|");
     var regex = "^\\s*(" + opcodes + ")\\s+(" + modes + ")(-?\\d+)\\s*,\\s*(" + modes + ")(-?\\d+)\\s*\\n?$";
@@ -70,7 +79,7 @@ Mars.prototype.compile_line = function (line) {
         new Address(matches[4], parseInt(matches[5], 10)));
 };
 
-Mars.prototype.compile_lines = function (input) {
+Mars.prototype.compileLines = function (input) {
     var lines = input.split("\n");
     var opcodes = [];
     for (var i = 0; i < lines.length; i++) {
@@ -78,7 +87,7 @@ Mars.prototype.compile_lines = function (input) {
         if (line.match("^\s*$")) {
             continue;
         }
-        opcodes.push(this.compile_line(line));
+        opcodes.push(this.compileLine(line));
     }
     return opcodes;
 };
@@ -217,7 +226,7 @@ Mars.prototype.getOpcodes = function () {
     return this.opcodes.getOwnProperties();
 };
 
-Mars.prototype.process_step = function (process) {
+Mars.prototype.processStep = function (process) {
     this.context = {
         ip: process.queue.shift(),
         fork: null
@@ -288,7 +297,7 @@ Mars.prototype.step = function () {
     }
 
     if (process !== undefined) {
-        this.process_step(process);
+        this.processStep(process);
         if (process.queue.length) {
             this.processes.push(process);
         }
@@ -298,31 +307,46 @@ Mars.prototype.step = function () {
 };
 
 
-function MarsDisplay(mars, id, width, height) {
+function MarsDisplay(mars, containerId, previewId, width, height) {
     this.mars = mars;
     this.width = width;
     this.height = height;
     this.cells = [];
 
-    var table = document.createElement("table");
+    var table = document.createElement("TABLE");
     table.className = "mars";
 
-    for (var i = 0; i < height; i++) {
-        var tr = document.createElement("tr");
-        for (var j = 0; j < width; j++ ) {
-            var td = document.createElement("td");
+    function addEventHandlers(element, x, y) {
+        element.addEventListener("mouseover",
+            function () {
+                document.getElementById(previewId).innerHTML =
+                    mars.core[y * width + x].toString();
+            }
+        );
+        element.addEventListener("mouseout",
+            function () {
+                document.getElementById(previewId).innerHTML = "";
+            }
+        );
+    }
+
+    for (var j = 0; j < height; j++) {
+        var tr = document.createElement("TR");
+        for (var i = 0; i < width; i++) {
+            var td = document.createElement("TD");
+            addEventHandlers(td, i, j);
             this.cells.push(td);
             tr.appendChild(td);
         }
         table.appendChild(tr);
     }
 
-    this.updateCells();
+    this.updateAllCells();
 
-    document.getElementById(id).appendChild(table);
+    document.getElementById(containerId).appendChild(table);
 }
 
-MarsDisplay.prototype.updateCells = function () {
+MarsDisplay.prototype.updateAllCells = function () {
     for (var i = 0; i < this.width * this.height; i++) {
         this.updateCell(i);
     }
@@ -339,19 +363,4 @@ MarsDisplay.prototype.updateCell = function (address) {
     }
 
     this.cells[address].className = className;
-};
-
-MarsDisplay.prototype.run = function (moves) {
-    if (!this.mars.processes.length) {
-        return;
-    }
-
-    var interval = 1000 / (moves * this.mars.processes.length);
-    var iid = setInterval(function (that) {
-        if (that.mars.step()) {
-            that.updateCells();
-        } else {
-            clearInterval(iid);
-        }
-    }, interval, this);
 };
