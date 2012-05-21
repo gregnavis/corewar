@@ -104,7 +104,7 @@ Mars.prototype.getInstructionRegex = function () {
 // Compile a Redcode instruction into a MARS instruction.
 Mars.prototype.compileInstruction = function (line) {
     var regex = this.getInstructionRegex();
-    var matches = line.match(regex);
+    var matches = line.toUpperCase().match(regex);
     if (!matches) {
         throw "cannot compile " + line;
     }
