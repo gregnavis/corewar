@@ -13,6 +13,10 @@
             var intervalId;
 
             function start(steps) {
+                if (intervalId) {
+                    return;
+                }
+
                 var interval = 1000 / (steps * this.mars.processes.length);
                 intervalId = setInterval(
                     function () {
@@ -26,7 +30,12 @@
             }
 
             function stop() {
+                if (!intervalId) {
+                    return;
+                }
+
                 clearInterval(intervalId);
+                intervalId = undefined;
             }
 
             function onload() {
