@@ -379,6 +379,37 @@ Mars.prototype.step = function () {
 };
 
 
+// Avialable MARS statuses.
+Mars.status = {
+    // No processes.
+    EMPTY: 0,
+
+    // Only one process.
+    WIN: 1,
+
+    // More than one process and no more steps.
+    DRAW: 2,
+
+    // More than one process and some steps to use.
+    GAME: 3,
+};
+
+
+// Return the MARS status.
+Mars.prototype.getStatus = function () {
+    if (!this.processes.length) {
+        return Mars.status.EMPTY;
+    }
+    if (this.processes.length === 1) {
+        return Mars.status.WIN;
+    }
+    if (!this.steps) {
+        return Mars.status.DRAW;
+    }
+    return Mars.status.GAME;
+};
+
+
 // Display a MARS in an HTML table.
 function MarsDisplay(mars, containerId, previewId, width, height, colors) {
     this.mars = mars;
