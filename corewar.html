@@ -30,7 +30,7 @@
             }
 
             function onload() {
-                mars = new Mars(width * height);
+                mars = new Mars(width * height, 10000);
                 marsDisplay = new MarsDisplay(mars, "core", "cell", width, height);
             }
 
@@ -69,7 +69,7 @@
 
                 var programs = document.getElementById("programs");
                 var li = document.createElement("LI");
-                var src = document.createTextNode("program of " + process.owner);
+                var src = document.createTextNode("program of " + owner);
                 li.appendChild(src);
                 programs.appendChild(li);
             }

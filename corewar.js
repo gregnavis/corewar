@@ -71,8 +71,11 @@ Instruction.prototype.toString = function () {
 
 
 // MARS (Memory Array Redcode Simulator)
-function Mars(coresize) {
+function Mars(coresize, steps) {
     this.core = new Array(coresize);
+    this.config = {
+        steps: steps
+    };
     this.reboot();
 }
 
@@ -86,6 +89,7 @@ Mars.prototype.reboot = function () {
         );
     }
     this.processes = [];
+    this.steps = this.config.steps;
 };
 
 // Return a regular expression matching Redcode instructions.
@@ -362,7 +366,7 @@ Mars.prototype.spawn = function (owner, instructions, offset) {
 
 // Run a single instruction of the next process in the queue.
 Mars.prototype.step = function () {
-    if (!this.processes.length) {
+    if (!this.processes.length || !this.steps) {
         return false;
     }
     var process = this.processes.shift();
@@ -370,6 +374,7 @@ Mars.prototype.step = function () {
     if (process.queue.length) {
         this.processes.push(process);
     }
+    this.steps--;
     return true;
 };
 
