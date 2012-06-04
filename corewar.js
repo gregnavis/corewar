@@ -379,35 +379,17 @@
     return true;
   };
 
-
-  // Avialable MARS statuses.
-  Mars.status = {
-    // No processes.
-  EMPTY: 0,
-
-         // Only one process.
-         WIN: 1,
-
-         // More than one process and no more steps.
-         DRAW: 2,
-
-         // More than one process and some steps to use.
-         GAME: 3,
-  };
-
-
-  // Return the MARS status.
-  Mars.prototype.getStatus = function () {
+  // Return the winning warrior (null - draw, undefined - game in progress).
+  Mars.prototype.getWinner = function () {
     if (!this.processes.length) {
-      return Mars.status.EMPTY;
+      throw new "no processes";
     }
     if (this.processes.length === 1) {
-      return Mars.status.WIN;
+      return this.processes[0];
     }
     if (!this.steps) {
-      return Mars.status.DRAW;
+      return null;
     }
-    return Mars.status.GAME;
   };
 
   exports.Mars = Mars;
