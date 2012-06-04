@@ -107,7 +107,7 @@
     var regex = this.getInstructionRegex();
     var matches = line.toUpperCase().match(regex);
     if (!matches) {
-      throw "cannot compile " + line;
+      throw new Error("cannot compile " + line);
     }
     return new Instruction(
         matches[1],
@@ -133,7 +133,7 @@
   // Addressing modes.
   Mars.prototype.modes = {
     "": function (address) { return address.value; },
-    "#": function (address) { throw "immediate mode cannot be used in addressing"; },
+    "#": function (address) { throw new Error("immediate mode cannot be used in addressing"); },
     "@": function (address) { return address.value + this.follow(address, "").b.value; },
     // TODO is < correctly implemented?
     "<": function (address) { return address.value + this.follow(address, "").b.value - 1; },
@@ -153,7 +153,7 @@
       mode = forceMode;
     }
     if (!this.modes.hasOwnProperty(mode)) {
-      throw mode + " is not a valid addressing mode";
+      throw new Error(mode + " is not a valid addressing mode");
     }
     var offset = this.modes[mode].apply(this, [address]);
     return (this.context.ip + offset) % this.core.length;
@@ -285,7 +285,7 @@
     var instruction = this.core[this.context.ip % this.core.length];
 
     if (!this.opcodes.hasOwnProperty(instruction.opcode)) {
-      throw "instruction " + instruction.opcode + " is not implemented";
+      throw new Error("instruction " + instruction.opcode + " is not implemented");
     }
 
     var offset = this.opcodes[instruction.opcode].apply(this, [ instruction.a, instruction.b ]);
@@ -355,7 +355,7 @@
       offset = this.getRandomProcessOffset(instructions);
     }
     if (offset === undefined) {
-      throw "out of memory";
+      throw new Error("out of memory");
     }
     var process = new Process(owner, [offset]);
     for (var i = 0; i < instructions.length; i++) {
@@ -382,7 +382,7 @@
   // Return the winning warrior (null - draw, undefined - game in progress).
   Mars.prototype.getWinner = function () {
     if (!this.processes.length) {
-      throw new "no processes";
+      throw new Error("no processes");
     }
     if (this.processes.length === 1) {
       return this.processes[0];
