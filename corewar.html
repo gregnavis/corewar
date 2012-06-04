@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <title>Browser Corewar</title>
         <script src="corewar.js" type="text/javascript"></script>
+        <script src="MarsDisplay.js" type="text/javascript"></script>
         <script type="text/javascript">
             var width = 50;
             var height = 50;
@@ -39,7 +40,7 @@
             }
 
             function onload() {
-                mars = new Mars(width * height, 10000);
+                mars = new corewar.Mars(width * height, 10000);
                 marsDisplay = new MarsDisplay(mars, "core", "cell", width, height);
             }
 
