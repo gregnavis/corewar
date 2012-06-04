@@ -1,9 +1,9 @@
 (function (exports) {
   // Return names of own properties of an object.
-  Object.prototype.getOwnProperties = function () {
+  function getOwnProperties(object) {
     var result = [];
-    for (var i in this) {
-      if (this.hasOwnProperty(i)) {
+    for (var i in object) {
+      if (object.hasOwnProperty(i)) {
         result.push(i);
       }
     }
@@ -141,7 +141,7 @@
 
   // Return symbols of addressing modes.
   Mars.prototype.getModes = function () {
-    return this.modes.getOwnProperties();
+    return getOwnProperties(this.modes);
   };
 
   // Resolve a MARS address to an offset that it points to.
@@ -273,7 +273,7 @@
 
   // Return names of opcodes.
   Mars.prototype.getOpcodes = function () {
-    return this.opcodes.getOwnProperties();
+    return getOwnProperties(this.opcodes);
   };
 
   // Run a single instruction of a process.
