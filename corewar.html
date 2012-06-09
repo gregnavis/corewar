@@ -23,7 +23,7 @@
 
                 setTimeout(
                     function gameStep() {
-                        if (!mars.step()) {
+                        if (!mars.step() || mars.getWinner()) {
                             stop();
                         }
                         marsDisplay.updateAll();
