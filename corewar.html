@@ -11,32 +11,32 @@
 
             var mars;
             var marsDisplay;
-            var intervalId;
+            var running = false;
+            var interval = 100;
 
-            function start(steps) {
-                if (intervalId) {
+            function start() {
+                if (running) {
                     return;
                 }
 
-                var interval = 1000 / (steps * this.mars.processes.length);
-                intervalId = setInterval(
-                    function () {
+                running = true;
+
+                setTimeout(
+                    function gameStep() {
                         if (!mars.step()) {
                             stop();
                         }
                         marsDisplay.updateAll();
+                        if (running) {
+                            setTimeout(gameStep, interval);
+                        }
                     },
                     interval
                 );
             }
 
             function stop() {
-                if (!intervalId) {
-                    return;
-                }
-
-                clearInterval(intervalId);
-                intervalId = undefined;
+                running = false;
             }
 
             function onload() {
@@ -45,10 +45,14 @@
             }
 
             function onstart() {
-                start(1);
+                start();
             }
 
             function onstep() {
+                if (running) {
+                    return;
+                }
+
                 mars.step();
                 marsDisplay.updateAll();
             }
@@ -83,6 +87,14 @@
                 li.appendChild(src);
                 programs.appendChild(li);
             }
+
+            function onslower() {
+                interval += 50;
+            }
+
+            function onfaster() {
+                interval = Math.max(50, interval - 50);
+            }
         </script>
         <link href="corewar.css" rel="stylesheet" type="text/css">
     </head>
@@ -93,6 +105,8 @@
             <button id="step" onclick="onstep()">Step</button>
             <button id="stop" onclick="onstop()">Stop</button>
             <button id="reboot" onclick="onreboot()">Reboot</button>
+            <button id="slower" onclick="onslower()">Slower</button>
+            <button id="faster" onclick="onfaster()">Faster</button>
             <div>
                 <textarea id="program"></textarea>
                 <button id="spawn" onclick="onspawn()">Spawn</button>
