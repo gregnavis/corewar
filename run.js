@@ -26,12 +26,14 @@ var buttons = {
       controller.start();
       buttons.hide("start", "reboot");
       buttons.show("stop");
+      warriors.disable();
     });
 
     buttons.stop.addEventListener("click", function () {
       controller.stop();
       buttons.show("start", "reboot");
       buttons.hide("stop");
+      warriors.enable();
     });
 
     buttons.reboot.addEventListener("click", function () {
@@ -77,6 +79,7 @@ var warriors = {
     var reader = new FileReader();
 
     buttons.disable();
+    warriors.disable();
 
     reader.addEventListener("load", function (e) {
       var source = e.target.result;
@@ -88,6 +91,7 @@ var warriors = {
         warriors.add(warrior);
         mars.display.unhighlight();
         buttons.enable();
+        warriors.enable();
       });
     });
 
@@ -111,6 +115,22 @@ var warriors = {
 
     mars.controller.spawn(warrior);
   },
+  enable: function () {
+    warriors.file.disabled = false;
+
+    var buttons = warriors.list.getElementsByTagName("BUTTON");
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].disabled = false;
+    }
+  },
+  disable: function () {
+    warriors.file.disabled = true;
+
+    var buttons = warriors.list.getElementsByTagName("BUTTON");
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].disabled = true;
+    }
+  }
 };
 
 function baseName(path) {
