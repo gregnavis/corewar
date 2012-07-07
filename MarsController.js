@@ -40,3 +40,8 @@ MarsController.prototype.spawn = function (warrior) {
   this.mars.spawn(warrior);
   this.display.updateAll();
 };
+
+MarsController.prototype.kill = function (warrior) {
+  this.mars.kill(warrior);
+  this.display.updateAll();
+}

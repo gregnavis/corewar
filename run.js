@@ -98,6 +98,15 @@ var warriors = {
     var strong = document.createElement("STRONG");
     strong.appendChild(document.createTextNode(warrior.name));
     li.appendChild(strong);
+    li.appendChild(document.createTextNode(" "));
+    var button = document.createElement("BUTTON");
+    button.className = "btn btn-mini btn-danger";
+    button.appendChild(document.createTextNode("Kill"));
+    button.addEventListener("click", function () {
+      li.parentNode.removeChild(li);
+      mars.controller.kill(warrior);
+    });
+    li.appendChild(button);
     warriors.list.appendChild(li);
 
     mars.controller.spawn(warrior);

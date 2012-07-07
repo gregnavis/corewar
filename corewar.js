@@ -75,6 +75,7 @@
   // MARS (Memory Array Redcode Simulator)
   function Mars(coresize, steps) {
     this.core = new Array(coresize);
+    this.warriors = [];
     this.config = {
       steps: steps
     };
@@ -85,13 +86,17 @@
   Mars.prototype.reboot = function () {
     for (var i = 0; i < this.core.length; i++) {
       this.core[i] = new Instruction(
-          "DAT",
-          new Address("", 0),
-          new Address("", 0)
-          );
+        "DAT",
+        new Address("", 0),
+        new Address("", 0)
+      );
     }
     this.processes = [];
     this.steps = this.config.steps;
+
+    for (var i = 0; i < this.warriors.length; i++) {
+      this.spawn(this.warriors[i]);
+    }
   };
 
   // Compute an offset.
@@ -326,11 +331,32 @@
 
   // Spawn a warrior.
   Mars.prototype.spawn = function (warrior) {
+    if (this.warriors.indexOf(warrior) === -1) {
+      this.warriors.push(warrior);
+    }
+
     var process = new Process(warrior, [warrior.offset], this.processes.length);
     for (var i = 0; i < warrior.opcodes.length; i++) {
       this.set(warrior.offset + i, warrior.opcodes[i].clone());
     }
     this.processes.push(process);
+  };
+
+  // Kill a warrior.
+  Mars.prototype.kill = function (warrior) {
+    for (var i = 0; i < this.processes.length; i++) {
+      if (this.processes[i].warrior === warrior) {
+        this.processes.splice(i, 1);
+        i--;
+      }
+    }
+
+    for (var i = 0; i < this.warriors.length; i++) {
+      if (this.warriors[i] === warrior) {
+        this.warriors.splice(i, 1);
+        i--;
+      }
+    }
   };
 
   // Run a single instruction of the next process in the queue.
