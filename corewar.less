@@ -1,0 +1,31 @@
+@mars-background: #202020;
+@cell-background: #404040;
+@cell-highlight-background: #606060;
+@cell-size: 10px;
+@cell-half-size: @cell-size / 2;
+
+#mars table {
+  td {
+    background: @cell-background;
+    border: solid @mars-background 1px;
+    border-collapse: collapse;
+    padding: @cell-half-size;
+  }
+
+  td.highlight {
+    background: @cell-highlight-background;
+  }
+}
+
+/* The warrior's list. */
+
+#warriors li {
+  button {
+    clear: right;
+    float: right;
+  }
+
+  line-height: 2em;
+  overflow: hidden;
+  width: 100%
+}

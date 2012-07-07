@@ -1,118 +1,53 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>Browser Corewar</title>
-        <script src="corewar.js" type="text/javascript"></script>
-        <script src="MarsDisplay.js" type="text/javascript"></script>
-        <script type="text/javascript">
-            var width = 50;
-            var height = 50;
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Core War Programming Environment</title>
+    <script src="corewar.js" type="text/javascript"></script>
+    <script src="MarsDisplay.js" type="text/javascript"></script>
+    <script src="MarsController.js" type="text/javascript"></script>
+    <script src="jquery.js" type="text/javascript"></script>
+    <script src="run.js" type="text/javascript"></script>
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="corewar.css" rel="stylesheet" type="text/css">
+  </head>
+  <body onload="init()">
+    <div class="container">
+      <header>
+        <h1>Core War Programming Environment</h1>
+      </header>
 
-            var mars;
-            var marsDisplay;
-            var running = false;
-            var interval = 100;
-
-            function start() {
-                if (running) {
-                    return;
-                }
-
-                running = true;
-
-                setTimeout(
-                    function gameStep() {
-                        if (!mars.step() || mars.getWinner()) {
-                            stop();
-                        }
-                        marsDisplay.updateAll();
-                        if (running) {
-                            setTimeout(gameStep, interval);
-                        }
-                    },
-                    interval
-                );
-            }
-
-            function stop() {
-                running = false;
-            }
-
-            function onload() {
-                mars = new corewar.Mars(width * height, 10000);
-                marsDisplay = new MarsDisplay(mars, "core", "cell", width, height);
-            }
-
-            function onstart() {
-                start();
-            }
-
-            function onstep() {
-                if (running) {
-                    return;
-                }
-
-                mars.step();
-                marsDisplay.updateAll();
-            }
-
-            function onstop() {
-                stop();
-            }
-
-            function onreboot() {
-                stop();
-                mars.reboot();
-                marsDisplay.updateAll();
-                document.getElementById("programs").innerHTML = "";
-            }
-
-            function onspawn() {
-                var program = document.getElementById("program").value;
-                try {
-                    var instructions = mars.compileProgram(program);
-                } catch (e) {
-                    alert("cannot compile: " + e);
-                    return;
-                }
-
-                var owner = "owner" + mars.processes.length;
-                mars.spawn(owner, instructions);
-                marsDisplay.updateAll();
-
-                var programs = document.getElementById("programs");
-                var li = document.createElement("LI");
-                var src = document.createTextNode("program of " + owner);
-                li.appendChild(src);
-                programs.appendChild(li);
-            }
-
-            function onslower() {
-                interval += 50;
-            }
-
-            function onfaster() {
-                interval = Math.max(50, interval - 50);
-            }
-        </script>
-        <link href="corewar.css" rel="stylesheet" type="text/css">
-    </head>
-    <body onload="onload()">
-        <div id="core"></div>
-        <div id="ctrl">
-            <button id="start" onclick="onstart()">Start</button>
-            <button id="step" onclick="onstep()">Step</button>
-            <button id="stop" onclick="onstop()">Stop</button>
-            <button id="reboot" onclick="onreboot()">Reboot</button>
-            <button id="slower" onclick="onslower()">Slower</button>
-            <button id="faster" onclick="onfaster()">Faster</button>
-            <div>
-                <textarea id="program"></textarea>
-                <button id="spawn" onclick="onspawn()">Spawn</button>
-            </div>
-            <ol id="programs"></ol>
-            <div id="cell"></div>
+      <div class="row">
+        <div class="span8">
+          <section id="mars">
+            <h2><abbr title="Memory Array Redcode Simulator">MARS</abbr></h2>
+            <div id="mars-display"></div>
+          </section>
         </div>
-    </body>
+
+        <div class="span4">
+          <h2>Warriors</h2>
+
+          <ul class="unstyled" id="warriors">
+            <li>
+              <form>
+                <label for="file">Redcode file:</label>
+                <input id="file" onchange="warriors.load()" type="file">
+              </form>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="span12">
+          <section id="control">
+            <button class="btn btn-primary" id="mars-start">Start</button>
+            <button class="btn btn-primary" id="mars-stop">Stop</button>
+            <button class="btn" id="mars-reboot">Reboot</button>
+          </section>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>

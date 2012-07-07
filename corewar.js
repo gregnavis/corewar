@@ -11,10 +11,11 @@
   };
 
 
-  // A MARS process.
-  function Process(owner, queue) {
-    this.owner = owner;
+  // A MARS process representing a running warrior.
+  function Process(warrior, queue, id) {
+    this.warrior = warrior;
     this.queue = queue;
+    this.id = id;
   }
 
   // Test if a process has a thread at an offset.
@@ -75,7 +76,7 @@
   function Mars(coresize, steps) {
     this.core = new Array(coresize);
     this.config = {
-  steps: steps
+      steps: steps
     };
     this.reboot();
   }
@@ -93,41 +94,19 @@
     this.steps = this.config.steps;
   };
 
-  // Return a regular expression matching Redcode instructions.
-  Mars.prototype.getInstructionRegex = function () {
-    var opcodes = this.getOpcodes().join("|");
-    var modes = this.getModes().join("|");
-    var regex = "^\\s*(" + opcodes + ")\\s+(" + modes
-      + ")(-?\\d+)\\s*,\\s*(" + modes + ")(-?\\d+)\\s*\\n?$";
-    return regex;
+  // Compute an offset.
+  Mars.prototype.offset = function (offset) {
+    return offset % this.core.length;
   };
 
-  // Compile a Redcode instruction into a MARS instruction.
-  Mars.prototype.compileInstruction = function (line) {
-    var regex = this.getInstructionRegex();
-    var matches = line.toUpperCase().match(regex);
-    if (!matches) {
-      throw new Error("cannot compile " + line);
-    }
-    return new Instruction(
-        matches[1],
-        new Address(matches[2], parseInt(matches[3], 10)),
-        new Address(matches[4], parseInt(matches[5], 10))
-        );
+  // Get memory content.
+  Mars.prototype.get = function (offset) {
+    return this.core[this.offset(offset)];
   };
 
-  // Compile a Redcode program into an array of MARS instructions.
-  Mars.prototype.compileProgram = function (program) {
-    var lines = program.split("\n");
-    var instructions = [];
-    for (var i = 0; i < lines.length; i++) {
-      var line = lines[i];
-      if (line.match("^\s*$")) {
-        continue;
-      }
-      instructions.push(this.compileInstruction(line));
-    }
-    return instructions;
+  // Set memory content.
+  Mars.prototype.set = function (offset, value) {
+    this.core[this.offset(offset)] = value;
   };
 
   // Addressing modes.
@@ -156,7 +135,7 @@
       throw new Error(mode + " is not a valid addressing mode");
     }
     var offset = this.modes[mode].apply(this, [address]);
-    return (this.context.ip + offset) % this.core.length;
+    return this.offset(this.context.ip + offset);
   };
 
   // Resolve a MARS address to an instruction that it points to.
@@ -279,10 +258,10 @@
   // Run a single instruction of a process.
   Mars.prototype.stepProcess = function (process) {
     this.context = {
-  ip: process.queue.shift(),
+      ip: process.queue.shift(),
       fork: null
     };
-    var instruction = this.core[this.context.ip % this.core.length];
+    var instruction = this.get(this.context.ip);
 
     if (!this.opcodes.hasOwnProperty(instruction.opcode)) {
       throw new Error("instruction " + instruction.opcode + " is not implemented");
@@ -304,7 +283,7 @@
     } else if (offset.constructor === Address) {
       offset = this.resolve(offset) - this.context.ip;
     }
-    process.queue.push((this.context.ip + offset) % this.core.length);
+    process.queue.push(this.offset(this.context.ip + offset));
     delete this.context;
   };
 
@@ -315,7 +294,7 @@
 
   // Return a process running at an offset.
   Mars.prototype.getProcessAt = function (offset) {
-    offset = offset % this.core.length;
+    offset = this.offset(offset);
     for (var i = 0; i < this.processes.length; i++) {
       var process = this.processes[i];
       if (process.hasThreadAt(offset)) {
@@ -327,13 +306,9 @@
   // Return random offset for a given process or undefined when out of memory.
   Mars.prototype.getRandomProcessOffset = function (instructions) {
     function hasEnoughSpaceAt(offset) {
-      var dat00 = new Instruction(
-          "DAT",
-          new Address("", 0),
-          new Address("", 0)
-          );
+      var dat00 = new Instruction("DAT", new Address("", 0), new Address("", 0));
       for (var i = offset; i < offset + instructions.length; i++) {
-        if (!this.core[i % this.core.length].isEqual(dat00)) {
+        if (!this.get(i).isEqual(dat00)) {
           return false;
         }
       }
@@ -342,28 +317,21 @@
 
     var random = Math.floor(Math.random() * this.core.length);
     for (var i = 0; i < this.core.length; i++) {
-      var offset = (random + i) % this.core.length;
+      var offset = this.offset(random + i);
       if (hasEnoughSpaceAt.apply(this, [offset])) {
         return offset;
       }
     }
   };
 
-  // Spawn a process.
-  Mars.prototype.spawn = function (owner, instructions, offset) {
-    if (offset === undefined) {
-      offset = this.getRandomProcessOffset(instructions);
-    }
-    if (offset === undefined) {
-      throw new Error("out of memory");
-    }
-    var process = new Process(owner, [offset]);
-    for (var i = 0; i < instructions.length; i++) {
-      this.core[(offset + i) % this.core.length] = instructions[i].clone();
+  // Spawn a warrior.
+  Mars.prototype.spawn = function (warrior) {
+    var process = new Process(warrior, [warrior.offset], this.processes.length);
+    for (var i = 0; i < warrior.opcodes.length; i++) {
+      this.set(warrior.offset + i, warrior.opcodes[i].clone());
     }
     this.processes.push(process);
   };
-
 
   // Run a single instruction of the next process in the queue.
   Mars.prototype.step = function () {
@@ -392,5 +360,58 @@
     }
   };
 
+
+  // A MARS warrior.
+  function Warrior(name, opcodes, offset) {
+    this.name = name;
+    this.opcodes = opcodes;
+    this.offset = offset;
+  }
+
+
+  // A MARS compiler.
+  function Compiler(mars) {
+    this.mars = mars;
+  }
+
+  // Compile a Redcode instruction into a MARS instruction.
+  Compiler.prototype.compileInstruction = function (line) {
+    var regex = this.getInstructionRegex();
+    var matches = line.toUpperCase().match(regex);
+    if (!matches) {
+      throw new Error("cannot compile " + line);
+    }
+    return new Instruction(
+      matches[1],
+      new Address(matches[2], parseInt(matches[3], 10)),
+      new Address(matches[4], parseInt(matches[5], 10))
+    );
+  };
+
+  // Compile a Redcode program into an array of MARS instructions.
+  Compiler.prototype.compileProgram = function (program) {
+    var lines = program.split("\n");
+    var instructions = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (line.match("^\s*$")) {
+        continue;
+      }
+      instructions.push(this.compileInstruction(line));
+    }
+    return instructions;
+  };
+
+  // Return a regular expression matching Redcode instructions.
+  Compiler.prototype.getInstructionRegex = function () {
+    var opcodes = this.mars.getOpcodes().join("|");
+    var modes = this.mars.getModes().join("|");
+    var regex = "^\\s*(" + opcodes + ")\\s+(" + modes
+      + ")(-?\\d+)\\s*,\\s*(" + modes + ")(-?\\d+)\\s*\\n?$";
+    return regex;
+  };
+
   exports.Mars = Mars;
-})(typeof exports === 'undefined' ? this['corewar'] = {} : exports);
+  exports.Warrior = Warrior;
+  exports.Compiler = Compiler;
+})(typeof exports === 'undefined' ? this['corewar'] = (this['corewar'] || {}) : exports);
