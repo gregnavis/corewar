@@ -92,10 +92,9 @@ var warriors = {
       var name = baseName(file.name);
       var opcodes = mars.compiler.compileProgram(source);
 
-      mars.display.highlight(opcodes.length, function (offset) {
+      mars.display.placeWarrior(opcodes.length, function (offset) {
         var warrior = new corewar.Warrior(name, opcodes, offset);
         warriors.add(warrior);
-        mars.display.unhighlight();
         buttons.enable();
         warriors.enable();
       });

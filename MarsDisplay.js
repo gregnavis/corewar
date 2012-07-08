@@ -12,21 +12,37 @@ function MarsDisplay(mars, containerId, width, height, colors) {
   var table = document.createElement("TABLE");
   table.className = "mars";
   table.addEventListener("mouseover", function (e) {
-    if ("TD" !== e.target.tagName || undefined === that._highlight) {
-      return;
-    }
-  });
-  table.addEventListener("mouseout", function (e) {
-    if ("TD" !== e.target.tagName || undefined === that._highlight) {
-      return;
-    }
-  });
-  table.addEventListener("click", function (e) {
-    if ("TD" !== e.target.tagName || undefined === that._highlight) {
+    if ("TD" !== e.target.tagName || undefined === that._placing) {
       return;
     }
 
-    that._highlight.handler(parseInt(e.target.dataset.offset));
+    var offset = parseInt(e.target.dataset.offset);
+    for (var i = 0; i < that._placing.length; i++) {
+      that.highlight(offset + i);
+    }
+  });
+  table.addEventListener("mouseout", function (e) {
+    if ("TD" !== e.target.tagName || undefined === that._placing) {
+      return;
+    }
+
+    var offset = parseInt(e.target.dataset.offset);
+    for (var i = 0; i < that._placing.length; i++) {
+      that.unhighlight(offset + i);
+    }
+  });
+  table.addEventListener("click", function (e) {
+    if ("TD" !== e.target.tagName || undefined === that._placing) {
+      return;
+    }
+
+    var offset = parseInt(e.target.dataset.offset);
+    for (var i = 0; i < that._placing.length; i++) {
+      that.unhighlight(offset + i);
+    }
+
+    that._placing.handler(parseInt(e.target.dataset.offset));
+    delete that._placing;
   });
 
   for (var j = 0; j < height; j++) {
@@ -68,7 +84,9 @@ MarsDisplay.prototype.updateAt = function (offset) {
   td.style.backgroundColor = "";
 
   if (this.mars.core[offset].opcode === "DAT") {
-    td.className += "opcode-dat";
+    addClass(td, "opcode-dat");
+  } else {
+    removeClass(td, "opcode-dat");
   }
 
   var process = this.mars.getProcessAt(offset);
@@ -80,17 +98,36 @@ MarsDisplay.prototype.updateAt = function (offset) {
   }
 };
 
-// Highlight a range of cells.
-MarsDisplay.prototype.highlight = function (count, handler) {
-  this.unhighlight();
-  this._highlight = { count: count, handler: handler };
+// Highlight a cell.
+MarsDisplay.prototype.highlight = function (offset) {
+  addClass(this.tds[this.mars.offset(offset)], "highlight");
 };
 
-// Unhighlight previous highlight.
-MarsDisplay.prototype.unhighlight = function () {
-  for (var i = 0; i < this.highlight.count; i++) {
-    var td = this.tds[this.mars.offset(offset + i)];
-    td.className = td.className.replace(/ ?highlight ?/, "");
-  }
-  this._highlight = undefined;
+// Unhighlight a cell.
+MarsDisplay.prototype.unhighlight = function (offset) {
+  removeClass(this.tds[this.mars.offset(offset)], "highlight");
 };
+
+// Select a place for a warrior.
+MarsDisplay.prototype.placeWarrior = function (length, handler) {
+  this._placing = { length: length, handler: handler };
+};
+
+// Check if an element has a given class.
+function hasClass(element, className) {
+  return element.className.match("\\b" + className + "\\b") !== null;
+}
+
+// Add a class to an element.
+function addClass(element, className) {
+  if (!hasClass(element, className)) {
+    element.className += " " + className;
+  }
+}
+
+// Remove a class from an element.
+function removeClass(element, className) {
+  if (hasClass(element, className)) {
+    element.className = element.className.replace(new RegExp(" " + className + "\\b"), "");
+  }
+}
