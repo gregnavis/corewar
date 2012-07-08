@@ -26,6 +26,15 @@ MarsController.prototype.start = function () {
   setTimeout(handler, that.interval);
 };
 
+MarsController.prototype.step = function () {
+  if (this.running) {
+    return;
+  }
+
+  this.mars.step();
+  this.display.updateAll();
+};
+
 MarsController.prototype.stop = function () {
   this.running = false;
 };

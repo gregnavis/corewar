@@ -14,30 +14,36 @@ var mars = {
 
 var buttons = {
   start: undefined,
-  stop: undefined,
+  step: undefined,
   reboot: undefined,
+  stop: undefined,
 
   init: function (controller) {
     buttons.start = document.getElementById("mars-start");
-    buttons.stop = document.getElementById("mars-stop");
+    buttons.step = document.getElementById("mars-step");
     buttons.reboot = document.getElementById("mars-reboot");
+    buttons.stop = document.getElementById("mars-stop");
 
     buttons.start.addEventListener("click", function () {
       controller.start();
-      buttons.hide("start", "reboot");
+      buttons.hide("start", "step", "reboot");
       buttons.show("stop");
       warriors.disable();
     });
 
-    buttons.stop.addEventListener("click", function () {
-      controller.stop();
-      buttons.show("start", "reboot");
-      buttons.hide("stop");
-      warriors.enable();
+    buttons.step.addEventListener("click", function () {
+      controller.step();
     });
 
     buttons.reboot.addEventListener("click", function () {
       controller.reboot();
+    });
+
+    buttons.stop.addEventListener("click", function () {
+      controller.stop();
+      buttons.show("start", "step", "reboot");
+      buttons.hide("stop");
+      warriors.enable();
     });
 
     buttons.hide("stop");
