@@ -4,6 +4,8 @@
 @cell-size: 10px;
 @cell-half-size: @cell-size / 2;
 
+/* The MARS. */
+
 #mars table {
   td {
     background: @cell-background;
@@ -19,13 +21,19 @@
 
 /* The warrior's list. */
 
-#warriors li {
-  button {
-    clear: right;
-    float: right;
+#warriors {
+  input {
+    width: 100%;
   }
 
-  line-height: 2em;
-  overflow: hidden;
-  width: 100%
+  li {
+    button {
+      clear: right;
+      float: right;
+    }
+
+    line-height: 2em;
+    overflow: hidden;
+    width: 100%
+  }
 }
