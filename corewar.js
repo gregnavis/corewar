@@ -1,4 +1,5 @@
 var size = 10
+var initialInstruction = new Instruction('DAT', 'F', '#', 0, '#', 0)
 
 function compile(line) {
   line = line.trim()
@@ -19,7 +20,7 @@ function WarriorsController($scope) {
   $scope.core = []
 
   for (var i = 0; i < size; i++) {
-    $scope.core[i] = new Instruction('DAT', 'F', '#', 0, '#', 0)
+    $scope.core[i] = initialInstruction.copy()
   }
 
   $scope.load = function (element) {
@@ -43,10 +44,33 @@ function WarriorsController($scope) {
         instructions.push(instruction)
       }
 
-      $scope.warriors.push(new Warrior(element.files[0].name, [0]))
+      var freeOffsets = []
+
+      for (var i = 0; i < $scope.core.length; i++) {
+        var free = true
+
+        for (var j = 0; j < instructions.length; j++) {
+          if (!$scope.core[(i + j) % $scope.core.length].isEqual(initialInstruction)) {
+            free = false
+            break
+          }
+        }
+
+        if (free) {
+          freeOffsets.push(i)
+        }
+      }
+
+      if (!freeOffsets.length) {
+        throw "No free offsets!"
+      }
+
+      var offset = freeOffsets[Math.floor(Math.random() * freeOffsets.length)]
+
+      $scope.warriors.push(new Warrior(element.files[0].name, [offset]))
 
       for (var i = 0; i < instructions.length; i++) {
-        $scope.core[i] = instructions[i]
+        $scope.core[(offset + i) % $scope.core.length] = instructions[i]
       }
 
       $scope.$apply()

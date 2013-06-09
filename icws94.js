@@ -39,6 +39,19 @@ Instruction.prototype.toString = function () {
   return this.Opcode + '.' + this.Modifier + ' ' + this.AMode + this.ANumber + ', ' + this.BMode + this.BNumber
 }
 
+Instruction.prototype.copy = function () {
+  return new Instruction(this.Opcode, this.Modifier, this.AMode, this.ANumber, this.BMode, this.BNumber)
+}
+
+Instruction.prototype.isEqual = function (instruction) {
+  return this.Opcode === instruction.Opcode &&
+    this.Modifier == instruction.Modifier &&
+    this.AMode == instruction.AMode &&
+    this.ANumber == instruction.ANumber &&
+    this.BMode == instruction.BMode &&
+    this.BNumber == instruction.BNumber
+}
+
 function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
   var IR, IRA, IRB, RPA, WPA, RPB, WPB, PIP;
 
