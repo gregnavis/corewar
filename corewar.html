@@ -1,54 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app>
   <head>
     <meta charset="utf-8">
     <title>Core War Programming Environment</title>
-    <script src="corewar.js" type="text/javascript"></script>
-    <script src="MarsDisplay.js" type="text/javascript"></script>
-    <script src="MarsController.js" type="text/javascript"></script>
-    <script src="jquery.js" type="text/javascript"></script>
-    <script src="run.js" type="text/javascript"></script>
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-    <link href="corewar.css" rel="stylesheet" type="text/css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js"></script>
+    <script src="icws94.js" type="text/javascript"></script>
+    <script src="corewar.js" type="text/javascript"></script>
   </head>
-  <body onload="init()">
+
+  <body ng-controller="WarriorsController">
     <div class="container">
       <header>
-        <h1>Core War Programming Environment</h1>
+        <h1>Memory Array Redcode Simulator</h1>
       </header>
 
       <div class="row">
         <div class="span8">
-          <section id="mars">
-            <h2><abbr title="Memory Array Redcode Simulator">MARS</abbr></h2>
-            <div id="mars-display"></div>
-          </section>
+          <ul>
+            <li ng-click="alert(cell.toString())" ng-repeat="cell in core" style="list-style: none; float: left; display: block; width: 10px; height: 10px; border: solid #fff 1px;background: {{cell.background()}}" title="{{cell.toString()}}"></td>
+          </ul>
+
+          <div id="control">
+            <button class="btn btn-primary" id="mars-start">Start</button>
+            <button class="btn" id="mars-step" ng-click="step()">Step</button>
+            <button class="btn" id="mars-reboot">Reboot</button>
+
+            <button class="btn btn-primary" id="mars-stop">Stop</button>
+          </div>
         </div>
 
         <div class="span4">
           <h2>Warriors</h2>
 
-          <ul class="unstyled" id="warriors">
-            <li>
-              <form>
-                <label for="file">Redcode file:</label>
-                <input id="file" onchange="warriors.load()" type="file">
-              </form>
-            </li>
+          <form>
+            <label for="file">Redcode file:</label>
+            <input id="file" type="file" onchange="angular.element(this).scope().load(this)">
+          </form>
+
+          <ul ng-show="warriors.length">
+            <li ng-repeat="warrior in warriors">{{warrior.name}}</li>
           </ul>
         </div>
       </div>
-
-      <div class="row">
-        <div class="span12">
-          <section id="control">
-            <button class="btn btn-primary" id="mars-start">Start</button>
-            <button class="btn" id="mars-step">Step</button>
-            <button class="btn" id="mars-reboot">Reboot</button>
-
-            <button class="btn btn-primary" id="mars-stop">Stop</button>
-          </section>
-        </div>
       </div>
     </div>
   </body>

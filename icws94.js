@@ -1,8 +1,9 @@
 var UNDEFINED = 0;
 var SUCCESS = 1;
 
-function Warrior() {
-  this.taskQueue = [];
+function Warrior(name, taskQueue) {
+  this.name = name;
+  this.taskQueue = taskQueue || [];
 }
 
 function Queue(W, TaskPointer) {
@@ -24,6 +25,18 @@ function Instruction(Opcode, Modifier, AMode, ANumber, BMode, BNumber) {
   this.ANumber = ANumber;
   this.BMode = BMode;
   this.BNumber = BNumber;
+}
+
+Instruction.prototype.background = function () {
+  if (this.Opcode === 'DAT') {
+    return '#222'
+  } else {
+    return '#932'
+  }
+}
+
+Instruction.prototype.toString = function () {
+  return this.Opcode + '.' + this.Modifier + ' ' + this.AMode + this.ANumber + ', ' + this.BMode + this.BNumber
 }
 
 function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
