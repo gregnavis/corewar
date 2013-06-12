@@ -79,9 +79,10 @@ function WarriorsController($scope) {
   }
 
   $scope.step = function () {
-    var warrior = $scope.warriors[0]
+    var warrior = $scope.warriors.shift()
     var pc = warrior.taskQueue.pop()
-    EMI94(warrior, pc, $scope.core, size, size, size)
-    $scope.$apply()
+    if (SUCCESS === EMI94(warrior, pc, $scope.core, size, size, size)) {
+      $scope.warriors.push(warrior)
+    }
   }
 }
