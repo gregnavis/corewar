@@ -1,39 +1,24 @@
 @mars-background: #202020;
-@cell-background: #303030;
-@cell-highlight-background: #606060;
-@cell-size: 10px;
-@cell-half-size: @cell-size / 2;
+@cell-background: #505050;
+@cell-size: 12px;
+@cell-border: 1px;
 
-/* The MARS. */
+#mars {
+  background: @mars-background;
+  float: left;
 
-#mars table {
-  td {
+  padding: @cell-border 0 0 @cell-border;
+
+  span {
     background: @cell-background;
-    border: solid @mars-background 1px;
-    border-collapse: collapse;
-    padding: @cell-half-size;
-  }
-
-  td.highlight {
-    background: @cell-highlight-background;
+    display: inline-block;
+    float: left;
+    height: @cell-size;
+    margin: 0 @cell-border @cell-border 0;
+    width: @cell-size;
   }
 }
 
-/* The warrior's list. */
-
-#warriors {
-  input {
-    width: 100%;
-  }
-
-  li {
-    button {
-      clear: right;
-      float: right;
-    }
-
-    line-height: 2em;
-    overflow: hidden;
-    width: 100%
-  }
+#control {
+  clear: both;
 }
