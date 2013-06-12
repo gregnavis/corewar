@@ -11,7 +11,11 @@ function Queue(W, TaskPointer) {
 }
 
 function Fold(pointer, limit, M) {
-  var result = pointer % limit;
+  var result
+  while (pointer < 0) {
+    pointer += limit
+  }
+  result = pointer % limit;
   if (result > (limit / 2)) {
     result += M - limit;
   }
@@ -55,7 +59,7 @@ Instruction.prototype.isEqual = function (instruction) {
 function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
   var IR, IRA, IRB, RPA, WPA, RPB, WPB, PIP;
 
-  IR = Core[PC];
+  IR = Core[PC].copy();
 
   if (IR.AMode === '#') {
     RPA = WPA = 0;
@@ -75,7 +79,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
     }
   }
 
-  IRA = Core[((PC + RPA) % M)];
+  IRA = Core[((PC + RPA) % M)].copy();
 
   if (IR.AMode === '>') {
     Core[PIP].BNumber = (Core[PIP].BNumber + 1) % M;
@@ -97,7 +101,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
     }
   }
 
-  IRB = Core[((PC + RPB) % M)];
+  IRB = Core[((PC + RPB) % M)].copy();
 
   if (IR.BMode === '>') {
     Core[PIP].BNumber = (Core[PIP].BNumber + 1) % M;
@@ -367,7 +371,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
       break;
 
     case 'JMP':
-      Queue(W, RPA);
+      Queue(W, (PC + RPA) % M);
       break;
 
     case 'JMZ':
