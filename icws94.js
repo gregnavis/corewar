@@ -168,7 +168,7 @@ Instruction.prototype.toString = function () {
 }
 
 Instruction.prototype.copy = function () {
-  return new Instruction(this.Opcode, this.Modifier, this.AMode, this.ANumber, this.BMode, this.BNumber)
+  return new Instruction(this.Opcode, this.Modifier, this.AMode, this.ANumber, this.BMode, this.BNumber, this.warrior)
 }
 
 Instruction.prototype.isEqual = function (instruction) {
@@ -183,6 +183,7 @@ Instruction.prototype.isEqual = function (instruction) {
 function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
   var IR, IRA, IRB, RPA, WPA, RPB, WPB, PIP;
 
+  Core[PC].warrior = W
   IR = Core[PC].copy();
 
   if (IR.AMode === '#') {
@@ -194,6 +195,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
     if (IR.AMode != '$') {
       if (IR.AMode === '<') {
         Core[((PC + WPA) % M)].BNumber = (Core[((PC + WPA) % M)].BNumber + M - 1) % M;
+        Core[((PC + WPA) % M)].warrior = W;
       }
       if (IR.AMode === '>') {
         PIP = (PC + WPA) % M;
@@ -207,6 +209,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
 
   if (IR.AMode === '>') {
     Core[PIP].BNumber = (Core[PIP].BNumber + 1) % M;
+    Core[PIP].warrior = W
   }
 
   if (IR.BMode === '#') {
@@ -217,6 +220,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
     if (IR.BMode != '$') {
       if (IR.BMode === '<') {
         Core[((PC + WPB) % M)].BNumber = (Core[((PC + WPB) % M)].BNumber + M - 1) % M;
+        Core[((PC + WPB) % M)].warrior = W
       } else if (IR.BMode === '>') {
         PIP = (PC + WPB) % M;
       }
@@ -229,6 +233,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
 
   if (IR.BMode === '>') {
     Core[PIP].BNumber = (Core[PIP].BNumber + 1) % M;
+    Core[PIP].warrior = W
   }
 
 
@@ -273,6 +278,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
           break;
       }
 
+      Core[((PC + WPB) % M)].warrior = W
       Queue(W, ((PC + 1) % M));
       break;
 
@@ -309,6 +315,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
           return UNDEFINED;
           break;
       }
+      Core[((PC + WPB) % M)].warrior = W
       Queue(W, ((PC + 1) % M));
       break;
 
@@ -345,6 +352,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
           return UNDEFINED;
           break;
       }
+      Core[((PC + WPB) % M)].warrior = W
       Queue(W, ((PC + 1) % M));
       break;
 
@@ -381,19 +389,23 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
           return UNDEFINED;
           break;
       }
+      Core[((PC + WPB) % M)].warrior = W
       Queue(W, ((PC + 1) % M));
       break;
 
     case 'DIV':
       switch (IR.Modifier) {
         case 'A':
-          if (IRA.ANumber != 0)
+          if (IRA.ANumber != 0) {
             Core[((PC + WPB) % M)].ANumber = IRB.ANumber / IRA.ANumber;
+            Core[((PC + WPB) % M)].warrior = W
+          }
           break;
 
         case 'B':
           if (IRA.BNumber != 0) {
             Core[((PC + WPB) % M)].BNumber = IRB.BNumber / IRA.BNumber;
+            Core[((PC + WPB) % M)].warrior = W
             Queue(W, ((PC + 1) % M));
           }
           break;
@@ -401,6 +413,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
         case 'AB':
           if (IRA.ANumber != 0) {
             Core[((PC + WPB) % M)].BNumber = IRB.BNumber / IRA.ANumber;
+            Core[((PC + WPB) % M)].warrior = W
             Queue(W, ((PC + 1) % M));
           }
           break;
@@ -408,26 +421,35 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
         case 'BA':
           if (IRA.BNumber != 0) {
             Core[((PC + WPB) % M)].ANumber = IRB.ANumber / IRA.BNumber;
+            Core[((PC + WPB) % M)].warrior = W
             Queue(W, ((PC + 1) % M));
           }
           break;
 
         case 'F':
         case 'I':
-          if (IRA.ANumber != 0)
+          if (IRA.ANumber != 0) {
             Core[((PC + WPB) % M)].ANumber = IRB.ANumber / IRA.ANumber;
-          if (IRA.BNumber != 0)
+            Core[((PC + WPB) % M)].warrior = W
+          }
+          if (IRA.BNumber != 0) {
             Core[((PC + WPB) % M)].BNumber = IRB.BNumber / IRA.BNumber;
+            Core[((PC + WPB) % M)].warrior = W
+          }
           if (!((IRA.ANumber === 0) || (IRA.BNumber === 0))) {
             Queue(W, ((PC + 1) % M));
           }
           break;
 
         case 'X':
-          if (IRA.ANumber != 0)
+          if (IRA.ANumber != 0) {
+            Core[((PC + WPB) % M)].warrior = W
             Core[((PC + WPB) % M)].BNumber = IRB.BNumber / IRA.ANumber;
-          if (IRA.BNumber != 0)
+          }
+          if (IRA.BNumber != 0) {
+            Core[((PC + WPB) % M)].warrior = W
             Core[((PC + WPB) % M)].ANumber = IRB.ANumber / IRA.BNumber;
+          }
           if (!((IRA.ANumber === 0) || (IRA.BNumber === 0))) {
             Queue(W, ((PC + 1) % M));
           }
@@ -442,13 +464,16 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
     case 'MOD':
       switch (IR.Modifier) {
         case 'A':
-          if (IRA.ANumber != 0)
+          if (IRA.ANumber != 0) {
             Core[((PC + WPB) % M)].ANumber = IRB.ANumber % IRA.ANumber;
+            Core[((PC + WPB) % M)].warrior = W
+          }
           break;
 
         case 'B':
           if (IRA.BNumber != 0) {
             Core[((PC + WPB) % M)].BNumber = IRB.BNumber % IRA.BNumber;
+            Core[((PC + WPB) % M)].warrior = W
             Queue(W, ((PC + 1) % M));
           }
           break;
@@ -456,6 +481,7 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
         case 'AB':
           if (IRA.ANumber != 0) {
             Core[((PC + WPB) % M)].BNumber = IRB.BNumber % IRA.ANumber;
+            Core[((PC + WPB) % M)].warrior = W
             Queue(W, ((PC + 1) % M));
           }
           break;
@@ -463,26 +489,35 @@ function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
         case 'BA':
           if (IRA.BNumber != 0) {
             Core[((PC + WPB) % M)].ANumber = IRB.ANumber % IRA.BNumber;
+            Core[((PC + WPB) % M)].warrior = W
             Queue(W, ((PC + 1) % M));
           }
           break;
 
         case 'F':
         case 'I':
-          if (IRA.ANumber != 0)
+          if (IRA.ANumber != 0) {
             Core[((PC + WPB) % M)].ANumber = IRB.ANumber % IRA.ANumber;
-          if (IRA.BNumber != 0)
+            Core[((PC + WPB) % M)].warrior = W
+          }
+          if (IRA.BNumber != 0) {
             Core[((PC + WPB) % M)].BNumber = IRB.BNumber % IRA.BNumber;
+            Core[((PC + WPB) % M)].warrior = W
+          }
           if (!((IRA.ANumber === 0) || (IRA.BNumber === 0))) {
             Queue(W, ((PC + 1) % M));
           }
           break;
 
         case 'X':
-          if (IRA.ANumber != 0)
+          if (IRA.ANumber != 0) {
             Core[((PC + WPB) % M)].BNumber = IRB.BNumber % IRA.ANumber;
-          if (IRA.BNumber != 0)
+            Core[((PC + WPB) % M)].warrior = W
+          }
+          if (IRA.BNumber != 0) {
             Core[((PC + WPB) % M)].ANumber = IRB.ANumber % IRA.BNumber;
+            Core[((PC + WPB) % M)].warrior = W
+          }
           if (!((IRA.ANumber === 0) || (IRA.BNumber === 0))) {
             Queue(W, ((PC + 1) % M));
           }
