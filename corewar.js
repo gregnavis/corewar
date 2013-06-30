@@ -1,4 +1,4 @@
-var size = 10
+var size = 100
 
 function WarriorsController($scope) {
   $scope.mars = new Mars(size)
