@@ -15,25 +15,32 @@ function compile(line) {
 var UNDEFINED = 0;
 var SUCCESS = 1;
 
-function Cell(mars, offset) {
-  this.mars = mars
+function Cell(display, offset) {
+  this.display = display
   this.offset = offset
 }
 
 Cell.prototype.getTooltip = function () {
-  return this.mars.core[this.offset].toString()
+  return this.display.mars.core[this.offset].toString()
 }
 
 Cell.prototype.getBackground = function () {
-  return this.mars.core[this.offset].background()
+  var warrior = this.display.mars.core[this.offset].warrior
+  if (undefined === warrior) {
+    return 'dark-gray'
+  }
+  return this.display.colors[warrior.id]
 }
 
 function Display(mars) {
+  this.mars = mars
   this.cells = []
   for (var i = 0; i < mars.core.length; i++) {
-    this.cells.push(new Cell(mars, i))
+    this.cells.push(new Cell(this, i))
   }
 }
+
+Display.prototype.colors = ['red', 'green', 'blue', 'yellow']
 
 function Mars(size) {
   this.core = []
@@ -93,7 +100,7 @@ Mars.prototype.loadWarriorFromSource = function (name, source) {
   }
 
   var offset = freeOffsets[Math.floor(Math.random() * freeOffsets.length)]
-  var warrior = new Warrior(name, [offset])
+  var warrior = new Warrior(this.warriors.length, name, [offset])
 
   this.warriors.push(warrior)
 
@@ -103,7 +110,8 @@ Mars.prototype.loadWarriorFromSource = function (name, source) {
   }
 }
 
-function Warrior(name, taskQueue) {
+function Warrior(id, name, taskQueue) {
+  this.id = id;
   this.name = name;
   this.taskQueue = taskQueue || [];
   this.color = 'red'
@@ -125,14 +133,14 @@ function Fold(pointer, limit, M) {
   return result;
 }
 
-function Instruction(Opcode, Modifier, AMode, ANumber, BMode, BNumber) {
+function Instruction(Opcode, Modifier, AMode, ANumber, BMode, BNumber, warrior) {
   this.Opcode = Opcode;
   this.Modifier = Modifier;
   this.AMode = AMode;
   this.ANumber = ANumber;
   this.BMode = BMode;
   this.BNumber = BNumber;
-  this.warrior = undefined
+  this.warrior = warrior
 }
 
 Instruction.initial = new Instruction('DAT', 'F', '#', 0, '#', 0)
