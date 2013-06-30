@@ -2,9 +2,9 @@ var size = 10
 
 function WarriorsController($scope) {
   $scope.mars = new Mars(size)
+  $scope.display = new Display($scope.mars)
 
   $scope.warriors = $scope.mars.warriors
-  $scope.core = $scope.mars.core
 
   $scope.load = function (element) { $scope.$apply(function () {
     var reader = new FileReader()

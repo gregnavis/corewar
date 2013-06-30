@@ -15,6 +15,26 @@ function compile(line) {
 var UNDEFINED = 0;
 var SUCCESS = 1;
 
+function Cell(mars, offset) {
+  this.mars = mars
+  this.offset = offset
+}
+
+Cell.prototype.getTooltip = function () {
+  return this.mars.core[this.offset].toString()
+}
+
+Cell.prototype.getBackground = function () {
+  return this.mars.core[this.offset].background()
+}
+
+function Display(mars) {
+  this.cells = []
+  for (var i = 0; i < mars.core.length; i++) {
+    this.cells.push(new Cell(mars, i))
+  }
+}
+
 function Mars(size) {
   this.core = []
   this.warriors = []
@@ -121,7 +141,7 @@ Instruction.prototype.background = function () {
   if (undefined === this.warrior) {
     return ''
   }
-  return this.warrior.color
+  return 'red'
 }
 
 Instruction.prototype.isFree = function () {

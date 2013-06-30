@@ -36,7 +36,7 @@
           <h2>The battle!</h2>
 
           <div id="mars">
-            <span style="background: {{cell.background()}}" ng-repeat="cell in core" title="{{cell.toString()}}"></span>
+            <span style="background: {{cell.getBackground()}}" ng-repeat="cell in display.cells" title="{{cell.getTooltip()}}"></span>
           </div>
 
           <div id="control">
