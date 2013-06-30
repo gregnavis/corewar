@@ -49,7 +49,7 @@ function WarriorsController($scope) {
         var free = true
 
         for (var j = 0; j < instructions.length; j++) {
-          if (!$scope.core[(i + j) % $scope.core.length].isEqual(initialInstruction)) {
+          if (!$scope.core[(i + j) % $scope.core.length].isFree()) {
             free = false
             break
           }
@@ -65,10 +65,12 @@ function WarriorsController($scope) {
       }
 
       var offset = freeOffsets[Math.floor(Math.random() * freeOffsets.length)]
+      var warrior = new Warrior(element.files[0].name, [offset])
 
-      $scope.warriors.push(new Warrior(element.files[0].name, [offset]))
+      $scope.warriors.push(warrior)
 
       for (var i = 0; i < instructions.length; i++) {
+        instructions[i].warrior = warrior
         $scope.core[(offset + i) % $scope.core.length] = instructions[i]
       }
     })}
@@ -81,6 +83,5 @@ function WarriorsController($scope) {
     if (SUCCESS === EMI94(warrior, pc, $scope.core, size, size, size)) {
       $scope.warriors.push(warrior)
     }
-    $scope.$apply()
   }
 }

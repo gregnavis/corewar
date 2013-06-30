@@ -4,6 +4,7 @@ var SUCCESS = 1;
 function Warrior(name, taskQueue) {
   this.name = name;
   this.taskQueue = taskQueue || [];
+  this.color = 'red'
 }
 
 function Queue(W, TaskPointer) {
@@ -29,16 +30,20 @@ function Instruction(Opcode, Modifier, AMode, ANumber, BMode, BNumber) {
   this.ANumber = ANumber;
   this.BMode = BMode;
   this.BNumber = BNumber;
+  this.warrior = undefined
 }
 
 Instruction.initial = new Instruction('DAT', 'F', '#', 0, '#', 0)
 
 Instruction.prototype.background = function () {
-  if (this.Opcode === 'DAT') {
-    return '#222'
-  } else {
-    return '#932'
+  if (undefined === this.warrior) {
+    return ''
   }
+  return this.warrior.color
+}
+
+Instruction.prototype.isFree = function () {
+  return this.warrior === undefined
 }
 
 Instruction.prototype.toString = function () {
