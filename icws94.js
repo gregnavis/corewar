@@ -52,10 +52,10 @@ function Mars(size) {
 }
 
 Mars.prototype.step = function () {
-  var warrior = $scope.warriors.shift()
+  var warrior = this.warriors.shift()
   var pc = warrior.taskQueue.pop()
-  if (SUCCESS === EMI94(warrior, pc, $scope.core, size, size, size)) {
-    $scope.warriors.push(warrior)
+  if (SUCCESS === EMI94(warrior, pc, this.core, size, size, size)) {
+    this.warriors.push(warrior)
   }
 }
 
