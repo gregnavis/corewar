@@ -32,6 +32,13 @@ Cell.prototype.getBackground = function () {
   return this.display.colors[warrior.id]
 }
 
+Cell.prototype.getBorder = function () {
+  if (this.display.mars.warriors.length && this.display.mars.warriors[0].taskQueue[0] == this.offset) {
+    return 'yellow'
+  }
+  return 'black'
+}
+
 function Display(mars) {
   this.mars = mars
   this.cells = []
