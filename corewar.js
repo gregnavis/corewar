@@ -1,5 +1,4 @@
 var size = 10
-var initialInstruction = new Instruction('DAT', 'F', '#', 0, '#', 0)
 
 function compile(line) {
   line = line.trim()
@@ -20,12 +19,12 @@ function WarriorsController($scope) {
   $scope.core = []
 
   for (var i = 0; i < size; i++) {
-    $scope.core[i] = initialInstruction.copy()
+    $scope.core[i] = Instruction.initial.copy()
   }
 
-  $scope.load = function (element) {
+  $scope.load = function (element) { $scope.$apply(function () {
     var reader = new FileReader()
-    reader.onload = function () {
+    reader.onload = function () { $scope.$apply(function () {
       var lines = reader.result.split("\n")
       var instructions = []
 
@@ -72,11 +71,9 @@ function WarriorsController($scope) {
       for (var i = 0; i < instructions.length; i++) {
         $scope.core[(offset + i) % $scope.core.length] = instructions[i]
       }
-
-      $scope.$apply()
-    }
+    })}
     reader.readAsText(element.files[0])
-  }
+  })}
 
   $scope.step = function () {
     var warrior = $scope.warriors.shift()
@@ -84,5 +81,6 @@ function WarriorsController($scope) {
     if (SUCCESS === EMI94(warrior, pc, $scope.core, size, size, size)) {
       $scope.warriors.push(warrior)
     }
+    $scope.$apply()
   }
 }

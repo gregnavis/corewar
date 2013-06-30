@@ -31,6 +31,8 @@ function Instruction(Opcode, Modifier, AMode, ANumber, BMode, BNumber) {
   this.BNumber = BNumber;
 }
 
+Instruction.initial = new Instruction('DAT', 'F', '#', 0, '#', 0)
+
 Instruction.prototype.background = function () {
   if (this.Opcode === 'DAT') {
     return '#222'
