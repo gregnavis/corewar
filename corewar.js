@@ -1,8 +1,8 @@
 var size = 100
 
 function WarriorsController($scope) {
-  $scope.mars = new Mars(size)
-  $scope.display = new Display($scope.mars)
+  $scope.mars = new corewar.Mars(size)
+  $scope.display = new corewar.Display($scope.mars)
 
   $scope.warriors = $scope.mars.warriors
 
