@@ -6,11 +6,12 @@
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
     <link href="corewar.css" rel="stylesheet" type="text/css">
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
     <script src="icws94.js" type="text/javascript"></script>
     <script src="corewar.js" type="text/javascript"></script>
   </head>
 
-  <body ng-controller="WarriorsController">
+  <body ng-controller="WarriorsController" ng-init="stop()">
     <div class="container">
       <header>
         <h1>Memory Array Redcode Simulator</h1>
@@ -40,11 +41,9 @@
           </div>
 
           <div id="control">
-            <button class="btn btn-primary" id="mars-start">Start</button>
+            <button ng-click="start()" class="btn btn-primary" id="mars-start">Start</button>
+            <button ng-click="stop()" class="btn btn-primary" id="mars-stop">Stop</button>
             <button class="btn" id="mars-step" ng-click="step()">Step</button>
-            <button class="btn" id="mars-reboot">Reboot</button>
-
-            <button class="btn btn-primary" id="mars-stop">Stop</button>
           </div>
         </div>
       </div>
