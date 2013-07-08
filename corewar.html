@@ -36,7 +36,7 @@
           <h2>The battle!</h2>
 
           <div id="mars">
-            <span style="background: {{cell.getBackground()}}; border: solid 1px {{cell.getBorder()}}" ng-repeat="cell in display.cells" title="{{cell.getTooltip()}}"></span>
+            <span ng-repeat="cellDisplay in marsDisplay.cellDisplays" style="background: {{cellDisplay.getBackground()}}; border: solid 1px {{cellDisplay.getBorder()}}" title="{{cellDisplay.getTooltip()}}"></span>
           </div>
 
           <div id="control">

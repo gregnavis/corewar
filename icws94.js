@@ -1,5 +1,5 @@
 var corewar = (function () {
-  function compile(line) {
+  function compileLine(line) {
     line = line.trim()
     if (line === '') {
       return
@@ -13,61 +13,10 @@ var corewar = (function () {
     return new Instruction(match[1], match[2], match[3], parseInt(match[4]), match[5], parseInt(match[6]))
   }
 
-  var UNDEFINED = 0;
-  var SUCCESS = 1;
-
-  function Cell(display, offset) {
-    this.display = display
-    this.offset = offset
+  function Compiler() {
   }
 
-  Cell.prototype.getTooltip = function () {
-    return this.display.mars.core[this.offset].toString()
-  }
-
-  Cell.prototype.getBackground = function () {
-    var warrior = this.display.mars.core[this.offset].warrior
-    if (undefined === warrior) {
-      return 'dark-gray'
-    }
-    return this.display.colors[warrior.id]
-  }
-
-  Cell.prototype.getBorder = function () {
-    if (this.display.mars.warriors.length && this.display.mars.warriors[0].taskQueue[0] == this.offset) {
-      return 'yellow'
-    }
-    return 'black'
-  }
-
-  function Display(mars) {
-    this.mars = mars
-    this.cells = []
-    for (var i = 0; i < mars.core.length; i++) {
-      this.cells.push(new Cell(this, i))
-    }
-  }
-
-  Display.prototype.colors = ['red', 'green', 'blue', 'yellow']
-
-  function Mars(size) {
-    this.core = []
-    this.warriors = []
-
-    for (var i = 0; i < size; i++) {
-      this.core[i] = Instruction.initial.copy()
-    }
-  }
-
-  Mars.prototype.step = function () {
-    var warrior = this.warriors.shift()
-    var pc = warrior.taskQueue.pop()
-    if (SUCCESS === EMI94(warrior, pc, this.core, size, size, size)) {
-      this.warriors.push(warrior)
-    }
-  }
-
-  Mars.prototype.loadWarriorFromSource = function (name, source) {
+  Compiler.prototype.compile = function (source) {
     var lines = source.split("\n")
     var instructions = []
 
@@ -78,7 +27,7 @@ var corewar = (function () {
         continue
       }
 
-      var instruction = compile(line)
+      var instruction = compileLine(line)
       if (instruction === undefined) {
         throw "cannot compile line " + (i + 1) + ": " + line
       }
@@ -86,13 +35,101 @@ var corewar = (function () {
       instructions.push(instruction)
     }
 
+    return instructions
+  }
+
+  var UNDEFINED = 0;
+  var SUCCESS = 1;
+
+  function MarsDisplay(mars) {
+    this.mars = mars
+    this.cellDisplays = []
+
+    for (var i = 0; i < mars.core.length; i++) {
+      this.cellDisplays.push(new CellDisplay(this, i))
+    }
+  }
+
+  MarsDisplay.prototype.colors = ['red', 'green', 'blue', 'yellow']
+
+  function CellDisplay(marsDisplay, offset) {
+    this.marsDisplay = marsDisplay
+    this.offset = offset
+  }
+
+  CellDisplay.prototype.getTooltip = function () {
+    return this.marsDisplay.mars.core[this.offset].instruction.toString()
+  }
+
+  CellDisplay.prototype.getBackground = function () {
+    var warrior = this.marsDisplay.mars.core[this.offset].modifiedBy
+    if (null === warrior) {
+      return 'dark-gray'
+    }
+    return 'red'//this.marsDisplay.colors[warrior.id]
+  }
+
+  CellDisplay.prototype.getBorder = function () {
+    if (this.marsDisplay.mars.getCurrentPc() === this.offset) {
+      return 'yellow'
+    }
+    return 'black'
+  }
+
+  function Mars(size) {
+    this.core = []
+    this.warriorsInstances = []
+    this.nextWarriorId = 1
+
+    for (var i = 0; i < size; i++) {
+      this.core[i] = new Cell(Mars.initialInstruction.copy())
+    }
+  }
+
+  Mars.initialInstruction = new Instruction('DAT', 'F', '#', 0, '#', 0)
+
+  Mars.prototype.step = function () {
+    var warriorInstance = this.warriorsInstances.shift()
+    var pc = warriorInstance.taskQueue.pop()
+    if (SUCCESS === EMI94(warriorInstance, pc, this.core, size, size, size)) {
+      this.warriorsInstances.push(warriorInstance)
+    }
+  }
+
+  Mars.prototype.loadWarriorFromSource = function (name, source) {
+    var compiler = new Compiler()
+    var warrior = new Warrior(this.nextWarriorId, name, compiler.compile(source))
+    this.spawn(warrior)
+  }
+
+  Mars.prototype.spawn = function (warrior) {
+    var freeOffsets = this.findFreeOffsets(warrior.instructions.length)
+
+    if (!freeOffsets.length) {
+      throw "No free offsets!"
+    }
+
+    var offset = freeOffsets[Math.floor(Math.random() * freeOffsets.length)]
+    var warriorInstance = new WarriorInstance(warrior, [offset])
+
+    this.warriorsInstances.push(warriorInstance)
+
+    for (var i = 0; i < warrior.instructions.length; i++) {
+      var instruction = warrior.instructions[i]
+      var cell = this.core[(offset + i) % this.core.length]
+      cell.instruction = instruction.copy()
+      cell.modifiedBy = warriorInstance
+    }
+  }
+
+  Mars.prototype.findFreeOffsets = function (length) {
     var freeOffsets = []
 
     for (var i = 0; i < this.core.length; i++) {
       var free = true
 
-      for (var j = 0; j < instructions.length; j++) {
-        if (!this.core[(i + j) % this.core.length].isFree()) {
+      for (var j = 0; j < length; j++) {
+        if (!this.core[(i + j) % this.core.length].instruction.isEqual(Mars.initialInstruction)) {
           free = false
           break
         }
@@ -103,26 +140,30 @@ var corewar = (function () {
       }
     }
 
-    if (!freeOffsets.length) {
-      throw "No free offsets!"
-    }
-
-    var offset = freeOffsets[Math.floor(Math.random() * freeOffsets.length)]
-    var warrior = new Warrior(this.warriors.length, name, [offset])
-
-    this.warriors.push(warrior)
-
-    for (var i = 0; i < instructions.length; i++) {
-      instructions[i].warrior = warrior
-      this.core[(offset + i) % this.core.length] = instructions[i]
-    }
+    return freeOffsets
   }
 
-  function Warrior(id, name, taskQueue) {
-    this.id = id;
-    this.name = name;
-    this.taskQueue = taskQueue || [];
-    this.color = 'red'
+  Mars.prototype.getCurrentPc = function () {
+    if (!this.warriorsInstances.length) {
+      return undefined
+    }
+    return this.warriorsInstances[0].taskQueue[0]
+  }
+
+  function Cell(instruction, modifiedBy) {
+    this.instruction = instruction
+    this.modifiedBy = modifiedBy || null
+  }
+
+  function Warrior(id, name, instructions) {
+    this.id = id
+    this.name = name
+    this.instructions = instructions
+  }
+
+  function WarriorInstance(warrior, taskQueue) {
+    this.warrior = warrior
+    this.taskQueue = taskQueue
   }
 
   function Queue(W, TaskPointer) {
@@ -141,137 +182,131 @@ var corewar = (function () {
     return result;
   }
 
-  function Instruction(Opcode, Modifier, AMode, ANumber, BMode, BNumber, warrior) {
-    this.Opcode = Opcode;
-    this.Modifier = Modifier;
-    this.AMode = AMode;
-    this.ANumber = ANumber;
-    this.BMode = BMode;
-    this.BNumber = BNumber;
-    this.warrior = warrior
-  }
-
-  Instruction.initial = new Instruction('DAT', 'F', '#', 0, '#', 0)
-
-  Instruction.prototype.background = function () {
-    if (undefined === this.warrior) {
-      return ''
-    }
-    return 'red'
-  }
-
-  Instruction.prototype.isFree = function () {
-    return this.warrior === undefined
+  function Instruction(opcode, modifier, aMode, aNumber, bMode, bNumber) {
+    this.opcode = opcode
+    this.modifier = modifier
+    this.aMode = aMode
+    this.aNumber = aNumber
+    this.bMode = bMode
+    this.bNumber = bNumber
   }
 
   Instruction.prototype.toString = function () {
-    return this.Opcode + '.' + this.Modifier + ' ' + this.AMode + this.ANumber + ', ' + this.BMode + this.BNumber
+    return this.opcode + '.' + this.modifier + ' ' +
+      this.aMode + this.aNumber + ', ' +
+      this.bMode + this.bNumber
   }
 
   Instruction.prototype.copy = function () {
-    return new Instruction(this.Opcode, this.Modifier, this.AMode, this.ANumber, this.BMode, this.BNumber, this.warrior)
+    return new Instruction(this.opcode,
+      this.modifier,
+      this.aMode,
+      this.aNumber,
+      this.bMode,
+      this.bNumber,
+      this.warrior)
   }
 
   Instruction.prototype.isEqual = function (instruction) {
-    return this.Opcode === instruction.Opcode &&
-      this.Modifier == instruction.Modifier &&
-      this.AMode == instruction.AMode &&
-      this.ANumber == instruction.ANumber &&
-      this.BMode == instruction.BMode &&
-      this.BNumber == instruction.BNumber
+    return this.opcode === instruction.opcode &&
+      this.modifier == instruction.modifier &&
+      this.aMode == instruction.aMode &&
+      this.aNumber == instruction.aNumber &&
+      this.bMode == instruction.bMode &&
+      this.bNumber == instruction.bNumber
   }
 
   function EMI94(W, PC, Core, M, ReadLimit, WriteLimit) {
     var IR, IRA, IRB, RPA, WPA, RPB, WPB, PIP;
 
-    Core[PC].warrior = W
-    IR = Core[PC].copy();
+    Core[PC].modifiedBy = W
+    IR = Core[PC].instruction.copy();
 
-    if (IR.AMode === '#') {
+    if (IR.aMode === '#') {
       RPA = WPA = 0;
     } else {
-      RPA = Fold(IR.ANumber, ReadLimit, M);
-      WPA = Fold(IR.ANumber, WriteLimit, M);
+      RPA = Fold(IR.aNumber, ReadLimit, M);
+      WPA = Fold(IR.aNumber, WriteLimit, M);
 
-      if (IR.AMode != '$') {
-        if (IR.AMode === '<') {
-          Core[((PC + WPA) % M)].BNumber = (Core[((PC + WPA) % M)].BNumber + M - 1) % M;
-          Core[((PC + WPA) % M)].warrior = W;
+      if (IR.aMode != '$') {
+        if (IR.aMode === '<') {
+          Core[((PC + WPA) % M)].instruction.bNumber = (Core[((PC + WPA) % M)].instruction.bNumber + M - 1) % M;
+          Core[((PC + WPA) % M)].modifiedBy = W;
         }
-        if (IR.AMode === '>') {
+        if (IR.aMode === '>') {
           PIP = (PC + WPA) % M;
         }
-        RPA = Fold((RPA + Core[((PC + RPA) % M)].BNumber), ReadLimit, M);
-        WPA = Fold((WPA + Core[((PC + WPA) % M)].BNumber), WriteLimit, M);
+        RPA = Fold((RPA + Core[((PC + RPA) % M)].instruction.bNumber), ReadLimit, M);
+        WPA = Fold((WPA + Core[((PC + WPA) % M)].instruction.bNumber), WriteLimit, M);
       }
     }
 
-    IRA = Core[((PC + RPA) % M)].copy();
+    IRA = Core[((PC + RPA) % M)].instruction.copy();
 
-    if (IR.AMode === '>') {
-      Core[PIP].BNumber = (Core[PIP].BNumber + 1) % M;
-      Core[PIP].warrior = W
+    if (IR.aMode === '>') {
+      Core[PIP].instruction.bNumber = (Core[PIP].instruction.bNumber + 1) % M;
+      Core[PIP].modifiedBy = W
     }
 
-    if (IR.BMode === '#') {
+    if (IR.bMode === '#') {
       RPB = WPB = 0;
     } else {
-      RPB = Fold(IR.BNumber, ReadLimit, M);
-      WPB = Fold(IR.BNumber, WriteLimit, M);
-      if (IR.BMode != '$') {
-        if (IR.BMode === '<') {
-          Core[((PC + WPB) % M)].BNumber = (Core[((PC + WPB) % M)].BNumber + M - 1) % M;
-          Core[((PC + WPB) % M)].warrior = W
-        } else if (IR.BMode === '>') {
+      RPB = Fold(IR.bNumber, ReadLimit, M);
+      WPB = Fold(IR.bNumber, WriteLimit, M);
+      if (IR.bMode != '$') {
+        if (IR.bMode === '<') {
+          Core[((PC + WPB) % M)].instruction.bNumber = (Core[((PC + WPB) % M)].instruction.bNumber + M - 1) % M;
+          Core[((PC + WPB) % M)].modifiedBy = W
+        } else if (IR.bMode === '>') {
           PIP = (PC + WPB) % M;
         }
-        RPB = Fold((RPB + Core[((PC + RPB) % M)].BNumber), ReadLimit, M);
-        WPB = Fold((WPB + Core[((PC + WPB) % M)].BNumber), WriteLimit, M);
+        RPB = Fold((RPB + Core[((PC + RPB) % M)].instruction.bNumber), ReadLimit, M);
+        WPB = Fold((WPB + Core[((PC + WPB) % M)].instruction.bNumber), WriteLimit, M);
       }
     }
 
-    IRB = Core[((PC + RPB) % M)].copy();
+    IRB = Core[((PC + RPB) % M)].instruction.copy();
 
-    if (IR.BMode === '>') {
-      Core[PIP].BNumber = (Core[PIP].BNumber + 1) % M;
-      Core[PIP].warrior = W
+    if (IR.bMode === '>') {
+      Core[PIP].instruction.bNumber = (Core[PIP].instruction.bNumber + 1) % M;
+      Core[PIP].modifiedBy = W
     }
 
 
-    switch (IR.Opcode) {
+    switch (IR.opcode) {
       case 'DAT':
         break;
 
       case 'MOV':
-        switch (IR.Modifier) {
+        switch (IR.modifier) {
           case 'A':
-            Core[((PC + WPB) % M)].ANumber = IRA.ANumber;
+            Core[((PC + WPB) % M)].instruction.aNumber = IRA.aNumber;
             break;
 
           case 'B':
-            Core[((PC + WPB) % M)].BNumber = IRA.BNumber;
+            Core[((PC + WPB) % M)].instruction.bNumber = IRA.bNumber;
             break;
 
           case 'AB':
-            Core[((PC + WPB) % M)].BNumber = IRA.ANumber;
+            Core[((PC + WPB) % M)].instruction.bNumber = IRA.aNumber;
             break;
 
           case 'BA':
-            Core[((PC + WPB) % M)].ANumber = IRA.BNumber;
+            Core[((PC + WPB) % M)].instruction.aNumber = IRA.bNumber;
             break;
 
           case 'F':
-            Core[((PC + WPB) % M)].ANumber = IRA.ANumber;
-            Core[((PC + WPB) % M)].BNumber = IRA.BNumber;
+            Core[((PC + WPB) % M)].instruction.aNumber = IRA.aNumber;
+            Core[((PC + WPB) % M)].instruction.bNumber = IRA.bNumber;
             break;
 
           case 'X':
-            Core[((PC + WPB) % M)].BNumber = IRA.ANumber;
-            Core[((PC + WPB) % M)].ANumber = IRA.BNumber;
+            Core[((PC + WPB) % M)].instruction.bNumber = IRA.aNumber;
+            Core[((PC + WPB) % M)].instruction.aNumber = IRA.bNumber;
             break;
 
           case 'I':
-            Core[((PC + WPB) % M)] = IRA;
+            Core[((PC + WPB) % M)].instruction = IRA;
             break;
 
           default:
@@ -279,179 +314,179 @@ var corewar = (function () {
             break;
         }
 
-        Core[((PC + WPB) % M)].warrior = W
+        Core[((PC + WPB) % M)].modifiedBy = W
         Queue(W, ((PC + 1) % M));
         break;
 
       case 'ADD':
-        switch (IR.Modifier) {
+        switch (IR.modifier) {
           case 'A':
-            Core[((PC + WPB) % M)].ANumber = (IRB.ANumber + IRA.ANumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.aNumber + IRA.aNumber) % M;
             break;
 
           case 'B':
-            Core[((PC + WPB) % M)].BNumber = (IRB.BNumber + IRA.BNumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.bNumber + IRA.bNumber) % M;
             break;
 
           case 'AB':
-            Core[((PC + WPB) % M)].BNumber = (IRB.ANumber + IRA.BNumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.aNumber + IRA.bNumber) % M;
             break;
 
           case 'BA':
-            Core[((PC + WPB) % M)].ANumber = (IRB.BNumber + IRA.ANumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.bNumber + IRA.aNumber) % M;
             break;
 
           case 'F':
           case 'I':
-            Core[((PC + WPB) % M)].ANumber = (IRB.ANumber + IRA.ANumber) % M;
-            Core[((PC + WPB) % M)].BNumber = (IRB.BNumber + IRA.BNumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.aNumber + IRA.aNumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.bNumber + IRA.bNumber) % M;
             break;
 
           case 'X':
-            Core[((PC + WPB) % M)].BNumber = (IRB.ANumber + IRA.BNumber) % M;
-            Core[((PC + WPB) % M)].ANumber = (IRB.BNumber + IRA.ANumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.aNumber + IRA.bNumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.bNumber + IRA.aNumber) % M;
             break;
 
           default:
             return UNDEFINED;
             break;
         }
-        Core[((PC + WPB) % M)].warrior = W
+        Core[((PC + WPB) % M)].modifiedBy = W
         Queue(W, ((PC + 1) % M));
         break;
 
       case 'SUB':
-        switch (IR.Modifier) {
+        switch (IR.modifier) {
           case 'A':
-            Core[((PC + WPB) % M)].ANumber = (IRB.ANumber + M - IRA.ANumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.aNumber + M - IRA.aNumber) % M;
             break;
 
           case 'B':
-            Core[((PC + WPB) % M)].BNumber = (IRB.BNumber + M - IRA.BNumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.bNumber + M - IRA.bNumber) % M;
             break;
 
           case 'AB':
-            Core[((PC + WPB) % M)].BNumber = (IRB.ANumber + M - IRA.BNumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.aNumber + M - IRA.bNumber) % M;
             break;
 
           case 'BA':
-            Core[((PC + WPB) % M)].ANumber = (IRB.BNumber + M - IRA.ANumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.bNumber + M - IRA.aNumber) % M;
             break;
 
           case 'F':
           case 'I':
-            Core[((PC + WPB) % M)].ANumber = (IRB.ANumber + M - IRA.ANumber) % M;
-            Core[((PC + WPB) % M)].BNumber = (IRB.BNumber + M - IRA.BNumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.aNumber + M - IRA.aNumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.bNumber + M - IRA.bNumber) % M;
             break;
 
           case 'X':
-            Core[((PC + WPB) % M)].BNumber = (IRB.ANumber + M - IRA.BNumber) % M;
-            Core[((PC + WPB) % M)].ANumber = (IRB.BNumber + M - IRA.ANumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.aNumber + M - IRA.bNumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.bNumber + M - IRA.aNumber) % M;
             break;
 
           default:
             return UNDEFINED;
             break;
         }
-        Core[((PC + WPB) % M)].warrior = W
+        Core[((PC + WPB) % M)].modifiedBy = W
         Queue(W, ((PC + 1) % M));
         break;
 
       case 'MUL':
-        switch (IR.Modifier) {
+        switch (IR.modifier) {
           case 'A':
-            Core[((PC + WPB) % M)].ANumber = (IRB.ANumber * IRA.ANumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.aNumber * IRA.aNumber) % M;
             break;
 
           case 'B':
-            Core[((PC + WPB) % M)].BNumber = (IRB.BNumber * IRA.BNumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.bNumber * IRA.bNumber) % M;
             break;
 
           case 'AB':
-            Core[((PC + WPB) % M)].BNumber = (IRB.ANumber * IRA.BNumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.aNumber * IRA.bNumber) % M;
             break;
 
           case 'BA':
-            Core[((PC + WPB) % M)].ANumber = (IRB.BNumber * IRA.ANumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.bNumber * IRA.aNumber) % M;
             break;
 
           case 'F':
           case 'I':
-            Core[((PC + WPB) % M)].ANumber = (IRB.ANumber * IRA.ANumber) % M;
-            Core[((PC + WPB) % M)].BNumber = (IRB.BNumber * IRA.BNumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.aNumber * IRA.aNumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.bNumber * IRA.bNumber) % M;
             break;
 
           case 'X':
-            Core[((PC + WPB) % M)].BNumber = (IRB.ANumber * IRA.BNumber) % M;
-            Core[((PC + WPB) % M)].ANumber = (IRB.BNumber * IRA.ANumber) % M;
+            Core[((PC + WPB) % M)].instruction.bNumber = (IRB.aNumber * IRA.bNumber) % M;
+            Core[((PC + WPB) % M)].instruction.aNumber = (IRB.bNumber * IRA.aNumber) % M;
             break;
 
           default:
             return UNDEFINED;
             break;
         }
-        Core[((PC + WPB) % M)].warrior = W
+        Core[((PC + WPB) % M)].modifiedBy = W
         Queue(W, ((PC + 1) % M));
         break;
 
       case 'DIV':
-        switch (IR.Modifier) {
+        switch (IR.modifier) {
           case 'A':
-            if (IRA.ANumber != 0) {
-              Core[((PC + WPB) % M)].ANumber = IRB.ANumber / IRA.ANumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.aNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.aNumber = IRB.aNumber / IRA.aNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
             }
             break;
 
           case 'B':
-            if (IRA.BNumber != 0) {
-              Core[((PC + WPB) % M)].BNumber = IRB.BNumber / IRA.BNumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.bNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.bNumber = IRB.bNumber / IRA.bNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
               Queue(W, ((PC + 1) % M));
             }
             break;
 
           case 'AB':
-            if (IRA.ANumber != 0) {
-              Core[((PC + WPB) % M)].BNumber = IRB.BNumber / IRA.ANumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.aNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.bNumber = IRB.bNumber / IRA.aNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
               Queue(W, ((PC + 1) % M));
             }
             break;
 
           case 'BA':
-            if (IRA.BNumber != 0) {
-              Core[((PC + WPB) % M)].ANumber = IRB.ANumber / IRA.BNumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.bNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.aNumber = IRB.aNumber / IRA.bNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
               Queue(W, ((PC + 1) % M));
             }
             break;
 
           case 'F':
           case 'I':
-            if (IRA.ANumber != 0) {
-              Core[((PC + WPB) % M)].ANumber = IRB.ANumber / IRA.ANumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.aNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.aNumber = IRB.aNumber / IRA.aNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
             }
-            if (IRA.BNumber != 0) {
-              Core[((PC + WPB) % M)].BNumber = IRB.BNumber / IRA.BNumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.bNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.bNumber = IRB.bNumber / IRA.bNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
             }
-            if (!((IRA.ANumber === 0) || (IRA.BNumber === 0))) {
+            if (!((IRA.aNumber === 0) || (IRA.bNumber === 0))) {
               Queue(W, ((PC + 1) % M));
             }
             break;
 
           case 'X':
-            if (IRA.ANumber != 0) {
-              Core[((PC + WPB) % M)].warrior = W
-              Core[((PC + WPB) % M)].BNumber = IRB.BNumber / IRA.ANumber;
+            if (IRA.aNumber != 0) {
+              Core[((PC + WPB) % M)].modifiedBy = W
+              Core[((PC + WPB) % M)].instruction.bNumber = IRB.bNumber / IRA.aNumber;
             }
-            if (IRA.BNumber != 0) {
-              Core[((PC + WPB) % M)].warrior = W
-              Core[((PC + WPB) % M)].ANumber = IRB.ANumber / IRA.BNumber;
+            if (IRA.bNumber != 0) {
+              Core[((PC + WPB) % M)].modifiedBy = W
+              Core[((PC + WPB) % M)].instruction.aNumber = IRB.aNumber / IRA.bNumber;
             }
-            if (!((IRA.ANumber === 0) || (IRA.BNumber === 0))) {
+            if (!((IRA.aNumber === 0) || (IRA.bNumber === 0))) {
               Queue(W, ((PC + 1) % M));
             }
             break;
@@ -463,63 +498,63 @@ var corewar = (function () {
         break;
 
       case 'MOD':
-        switch (IR.Modifier) {
+        switch (IR.modifier) {
           case 'A':
-            if (IRA.ANumber != 0) {
-              Core[((PC + WPB) % M)].ANumber = IRB.ANumber % IRA.ANumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.aNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.aNumber = IRB.aNumber % IRA.aNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
             }
             break;
 
           case 'B':
-            if (IRA.BNumber != 0) {
-              Core[((PC + WPB) % M)].BNumber = IRB.BNumber % IRA.BNumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.bNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.bNumber = IRB.bNumber % IRA.bNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
               Queue(W, ((PC + 1) % M));
             }
             break;
 
           case 'AB':
-            if (IRA.ANumber != 0) {
-              Core[((PC + WPB) % M)].BNumber = IRB.BNumber % IRA.ANumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.aNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.bNumber = IRB.bNumber % IRA.aNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
               Queue(W, ((PC + 1) % M));
             }
             break;
 
           case 'BA':
-            if (IRA.BNumber != 0) {
-              Core[((PC + WPB) % M)].ANumber = IRB.ANumber % IRA.BNumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.bNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.aNumber = IRB.aNumber % IRA.bNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
               Queue(W, ((PC + 1) % M));
             }
             break;
 
           case 'F':
           case 'I':
-            if (IRA.ANumber != 0) {
-              Core[((PC + WPB) % M)].ANumber = IRB.ANumber % IRA.ANumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.aNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.aNumber = IRB.aNumber % IRA.aNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
             }
-            if (IRA.BNumber != 0) {
-              Core[((PC + WPB) % M)].BNumber = IRB.BNumber % IRA.BNumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.bNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.bNumber = IRB.bNumber % IRA.bNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
             }
-            if (!((IRA.ANumber === 0) || (IRA.BNumber === 0))) {
+            if (!((IRA.aNumber === 0) || (IRA.bNumber === 0))) {
               Queue(W, ((PC + 1) % M));
             }
             break;
 
           case 'X':
-            if (IRA.ANumber != 0) {
-              Core[((PC + WPB) % M)].BNumber = IRB.BNumber % IRA.ANumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.aNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.bNumber = IRB.bNumber % IRA.aNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
             }
-            if (IRA.BNumber != 0) {
-              Core[((PC + WPB) % M)].ANumber = IRB.ANumber % IRA.BNumber;
-              Core[((PC + WPB) % M)].warrior = W
+            if (IRA.bNumber != 0) {
+              Core[((PC + WPB) % M)].instruction.aNumber = IRB.aNumber % IRA.bNumber;
+              Core[((PC + WPB) % M)].modifiedBy = W
             }
-            if (!((IRA.ANumber === 0) || (IRA.BNumber === 0))) {
+            if (!((IRA.aNumber === 0) || (IRA.bNumber === 0))) {
               Queue(W, ((PC + 1) % M));
             }
             break;
@@ -535,10 +570,10 @@ var corewar = (function () {
         break;
 
       case 'JMZ':
-        switch (IR.Modifier) {
+        switch (IR.modifier) {
           case 'A':
           case 'BA':
-            if (IRB.ANumber === 0) {
+            if (IRB.aNumber === 0) {
               Queue(W, RPA);
             } else {
               Queue(W, ((PC + 1) % M));
@@ -547,7 +582,7 @@ var corewar = (function () {
 
           case 'B':
           case 'AB':
-            if (IRB.BNumber === 0) {
+            if (IRB.bNumber === 0) {
               Queue(W, RPA);
             } else {
               Queue(W, ((PC + 1) % M));
@@ -557,7 +592,7 @@ var corewar = (function () {
           case 'F':
           case 'X':
           case 'I':
-            if ((IRB.ANumber === 0) && (IRB.BNumber === 0)) {
+            if ((IRB.aNumber === 0) && (IRB.bNumber === 0)) {
               Queue(W, RPA);
             } else {
               Queue(W, ((PC + 1) % M));
@@ -571,10 +606,10 @@ var corewar = (function () {
         break;
 
       case 'JMN':
-        switch (IR.Modifier) {
+        switch (IR.modifier) {
           case 'A':
           case 'BA':
-            if (IRB.ANumber != 0) {
+            if (IRB.aNumber != 0) {
               Queue(W, RPA);
             } else {
               Queue(W, ((PC + 1) % M));
@@ -583,7 +618,7 @@ var corewar = (function () {
 
           case 'B':
           case 'AB':
-            if (IRB.BNumber != 0) {
+            if (IRB.bNumber != 0) {
               Queue(W, RPA);
             } else {
               Queue(W, ((PC + 1) % M));
@@ -593,7 +628,7 @@ var corewar = (function () {
           case 'F':
           case 'X':
           case 'I':
-            if ((IRB.ANumber != 0) || (IRB.BNumber != 0)) {
+            if ((IRB.aNumber != 0) || (IRB.bNumber != 0)) {
               Queue(W, RPA);
             } else {
               Queue(W, ((PC + 1) % M));
@@ -607,12 +642,12 @@ var corewar = (function () {
         break;
 
       case 'DJN':
-        switch (IR.Modifier) {
+        switch (IR.modifier) {
           case 'A':
           case 'BA':
-            Core[((PC + WPB) % M)].ANumber = (Core[((PC + WPB) % M)].ANumber + M - 1) % M;
-            IRB.ANumber -= 1;
-            if (IRB.ANumber != 0) {
+            Core[((PC + WPB) % M)].instruction.aNumber = (Core[((PC + WPB) % M)].instruction.aNumber + M - 1) % M;
+            IRB.aNumber -= 1;
+            if (IRB.aNumber != 0) {
               Queue(W, RPA);
             } else {
               Queue(W, ((PC + 1) % M));
@@ -621,9 +656,9 @@ var corewar = (function () {
 
           case 'B':
           case 'AB':
-            Core[((PC + WPB) % M)].BNumber = (Core[((PC + WPB) % M)].BNumber + M - 1) % M;
-            IRB.BNumber -= 1;
-            if (IRB.BNumber != 0) {
+            Core[((PC + WPB) % M)].instruction.bNumber = (Core[((PC + WPB) % M)].instruction.bNumber + M - 1) % M;
+            IRB.bNumber -= 1;
+            if (IRB.bNumber != 0) {
               Queue(W, RPA);
             } else {
               Queue(W, ((PC + 1) % M));
@@ -633,11 +668,11 @@ var corewar = (function () {
           case 'F':
           case 'X':
           case 'I':
-            Core[((PC + WPB) % M)].ANumber = (Core[((PC + WPB) % M)].ANumber + M - 1) % M;
-            IRB.ANumber -= 1;
-            Core[((PC + WPB) % M)].BNumber = (Core[((PC + WPB) % M)].BNumber + M - 1) % M;
-            IRB.BNumber -= 1;
-            if ((IRB.ANumber != 0) || (IRB.BNumber != 0)) {
+            Core[((PC + WPB) % M)].instruction.aNumber = (Core[((PC + WPB) % M)].instruction.aNumber + M - 1) % M;
+            IRB.aNumber -= 1;
+            Core[((PC + WPB) % M)].instruction.bNumber = (Core[((PC + WPB) % M)].instruction.bNumber + M - 1) % M;
+            IRB.bNumber -= 1;
+            if ((IRB.aNumber != 0) || (IRB.bNumber != 0)) {
               Queue(W, RPA);
             } else {
               Queue(W, ((PC + 1) % M));
@@ -651,9 +686,9 @@ var corewar = (function () {
         break;
 
       case 'CMP':
-        switch (IR.Modifier) {
+        switch (IR.modifier) {
           case 'A':
-            if (IRA.ANumber === IRB.ANumber) {
+            if (IRA.aNumber === IRB.aNumber) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -661,7 +696,7 @@ var corewar = (function () {
             break;
 
           case 'B':
-            if (IRA.BNumber === IRB.BNumber) {
+            if (IRA.bNumber === IRB.bNumber) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -669,7 +704,7 @@ var corewar = (function () {
             break;
 
           case 'AB':
-            if (IRA.ANumber === IRB.BNumber) {
+            if (IRA.aNumber === IRB.bNumber) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -677,7 +712,7 @@ var corewar = (function () {
             break;
 
           case 'BA':
-            if (IRA.BNumber === IRB.ANumber) {
+            if (IRA.bNumber === IRB.aNumber) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -685,8 +720,8 @@ var corewar = (function () {
             break;
 
           case 'F':
-            if ((IRA.ANumber === IRB.ANumber) &&
-                (IRA.BNumber === IRB.BNumber)) {
+            if ((IRA.aNumber === IRB.aNumber) &&
+                (IRA.bNumber === IRB.bNumber)) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -694,8 +729,8 @@ var corewar = (function () {
             break;
 
           case 'X':
-            if ((IRA.ANumber === IRB.BNumber) &&
-                (IRA.BNumber === IRB.ANumber)) {
+            if ((IRA.aNumber === IRB.bNumber) &&
+                (IRA.bNumber === IRB.aNumber)) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -703,12 +738,12 @@ var corewar = (function () {
             break;
 
           case 'I':
-            if ((IRA.Opcode === IRB.Opcode) &&
-                (IRA.Modifier === IRB.Modifier) &&
-                (IRA.AMode === IRB.AMode) &&
-                (IRA.ANumber === IRB.ANumber) &&
-                (IRA.BMode === IRB.BMode) &&
-                (IRA.BNumber === IRB.BNumber)) {
+            if ((IRA.opcode === IRB.opcode) &&
+                (IRA.modifier === IRB.modifier) &&
+                (IRA.aMode === IRB.aMode) &&
+                (IRA.aNumber === IRB.aNumber) &&
+                (IRA.bMode === IRB.bMode) &&
+                (IRA.bNumber === IRB.bNumber)) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -722,9 +757,9 @@ var corewar = (function () {
         break;
 
       case 'SLT' :
-        switch (IR.Modifier) {
+        switch (IR.modifier) {
           case 'A':
-            if (IRA.ANumber < IRB.ANumber) {
+            if (IRA.aNumber < IRB.aNumber) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -732,7 +767,7 @@ var corewar = (function () {
             break;
 
           case 'B':
-            if (IRA.BNumber < IRB.BNumber) {
+            if (IRA.bNumber < IRB.bNumber) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -740,7 +775,7 @@ var corewar = (function () {
             break;
 
           case 'AB':
-            if (IRA.ANumber < IRB.BNumber) {
+            if (IRA.aNumber < IRB.bNumber) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -748,7 +783,7 @@ var corewar = (function () {
             break;
 
           case 'BA':
-            if (IRA.BNumber < IRB.ANumber) {
+            if (IRA.bNumber < IRB.aNumber) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -757,8 +792,8 @@ var corewar = (function () {
 
           case 'F':
           case 'I':
-            if ((IRA.ANumber < IRB.ANumber) &&
-                (IRA.BNumber < IRB.BNumber)) {
+            if ((IRA.aNumber < IRB.aNumber) &&
+                (IRA.bNumber < IRB.bNumber)) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -766,8 +801,8 @@ var corewar = (function () {
             break;
 
           case 'X':
-            if ((IRA.ANumber < IRB.BNumber) &&
-                (IRA.BNumber < IRB.ANumber)) {
+            if ((IRA.aNumber < IRB.bNumber) &&
+                (IRA.bNumber < IRB.aNumber)) {
               Queue(W, ((PC + 2) % M));
             } else {
               Queue(W, ((PC + 1) % M));
@@ -793,9 +828,8 @@ var corewar = (function () {
   }
 
   return {
-    'compile': compile,
-    'Cell': Cell,
-    'Display': Display,
+    'CellDisplay': CellDisplay,
+    'MarsDisplay': MarsDisplay,
     'Mars': Mars,
     'Warrior': Warrior,
     'Instruction': Instruction
