@@ -1,13 +1,12 @@
 var size = 100
 
-function WarriorsController($scope, $timeout) {
-  var startTimeout
-
+function CorewarController($scope) {
   $scope.mars = new corewar.Mars(size)
   $scope.marsDisplay = new corewar.MarsDisplay($scope.mars)
-
   $scope.warriors = $scope.mars.warriors
+}
 
+function WarriorsController($scope) {
   $scope.load = function (element) { $scope.$apply(function () {
     var reader = new FileReader()
     reader.onload = function () { $scope.$apply(function () {
@@ -15,6 +14,10 @@ function WarriorsController($scope, $timeout) {
     })}
     reader.readAsText(element.files[0])
   })}
+}
+
+function BattleController($scope, $timeout) {
+  var startTimeout
 
   $scope.start = function () {
     startTimeout = $timeout(function tick() {

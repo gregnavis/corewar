@@ -91,7 +91,8 @@ var corewar = (function () {
   Mars.prototype.step = function () {
     var warriorInstance = this.warriorsInstances.shift()
     var pc = warriorInstance.taskQueue.pop()
-    if (SUCCESS === EMI94(warriorInstance, pc, this.core, size, size, size)) {
+    if (SUCCESS === EMI94(warriorInstance, pc, this.core, size, size, size) &&
+        warriorInstance.taskQueue.length) {
       this.warriorsInstances.push(warriorInstance)
     }
   }

@@ -11,13 +11,13 @@
     <script src="corewar.js" type="text/javascript"></script>
   </head>
 
-  <body ng-controller="WarriorsController" ng-init="stop()">
+  <body ng-controller="CorewarController" ng-init="stop()">
     <div class="container">
       <header>
         <h1>Memory Array Redcode Simulator</h1>
       </header>
 
-      <div class="row" id="step-warriors">
+      <div ng-controller="WarriorsController" class="row" id="step-warriors">
         <div class="span12">
           <h2>Warriors</h2>
 
@@ -32,7 +32,7 @@
         </div>
       </div>
 
-      <div class="row" id="step-battle">
+      <div ng-controller="BattleController" class="row" id="step-battle">
         <div class="span12">
           <h2>The battle!</h2>
 
