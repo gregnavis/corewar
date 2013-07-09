@@ -1,4 +1,5 @@
 var size = 100
+var delay = 50
 
 function CorewarController($scope) {
   $scope.mars = new corewar.Mars(size)
@@ -25,8 +26,8 @@ function BattleController($scope, $timeout) {
       $("#mars-start").hide()
       $("#mars-step").hide()
       $("#mars-stop").show()
-      startTimeout = $timeout(tick, 250)
-    }, 250)
+      startTimeout = $timeout(tick, delay)
+    }, delay)
   }
 
   $scope.stop = function () {
