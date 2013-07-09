@@ -50,7 +50,14 @@ var corewar = (function () {
     }
   }
 
-  MarsDisplay.prototype.colors = ['red', 'green', 'blue', 'yellow']
+  MarsDisplay.prototype.colors = [
+    'YellowGreen',
+    'Red',
+    'Green',
+    'GreenYellow',
+    'Gold',
+    'DeepPink'
+  ]
 
   function CellDisplay(marsDisplay, offset) {
     this.marsDisplay = marsDisplay
@@ -62,11 +69,11 @@ var corewar = (function () {
   }
 
   CellDisplay.prototype.getBackground = function () {
-    var warrior = this.marsDisplay.mars.core[this.offset].modifiedBy
-    if (null === warrior) {
+    var warriorInstance = this.marsDisplay.mars.core[this.offset].modifiedBy
+    if (null === warriorInstance) {
       return 'dark-gray'
     }
-    return 'red'//this.marsDisplay.colors[warrior.id]
+    return this.marsDisplay.colors[warriorInstance.id]
   }
 
   CellDisplay.prototype.getBorder = function () {
@@ -111,7 +118,9 @@ var corewar = (function () {
     }
 
     var offset = freeOffsets[Math.floor(Math.random() * freeOffsets.length)]
-    var warriorInstance = new WarriorInstance(warrior, [offset])
+    var warriorInstance = new WarriorInstance(this.warriorsInstances.length,
+      warrior,
+      [offset])
 
     this.warriorsInstances.push(warriorInstance)
 
@@ -162,7 +171,8 @@ var corewar = (function () {
     this.instructions = instructions
   }
 
-  function WarriorInstance(warrior, taskQueue) {
+  function WarriorInstance(id, warrior, taskQueue) {
+    this.id = id
     this.warrior = warrior
     this.taskQueue = taskQueue
   }
