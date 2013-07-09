@@ -21,8 +21,8 @@
         <div ng-controller="WarriorsController" class="span3">
           <h2>Warriors</h2>
 
-          <ul ng-show="mars.warriorsInstances.length">
-            <li ng-repeat="warriorInstance in mars.warriorsInstances">{{warriorInstance.warrior.name}}</li>
+          <ul ng-show="marsDisplay.warriorInstanceDisplays.length">
+            <li ng-repeat="warriorInstanceDisplay in marsDisplay.warriorInstanceDisplays">{{warriorInstanceDisplay.name}}</li>
           </ul>
 
           <form>

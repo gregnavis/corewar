@@ -59,6 +59,18 @@ var corewar = (function () {
     'DeepPink'
   ]
 
+  Object.defineProperty(MarsDisplay.prototype, 'warriorInstanceDisplays', {
+    'get': function () {
+      var warriorInstanceDisplays = []
+
+      for (var i = 0; i < this.mars.warriorsInstances.length; i++) {
+        warriorInstanceDisplays.push(new WarriorInstanceDisplay(this, i))
+      }
+
+      return warriorInstanceDisplays
+    }
+  })
+
   function CellDisplay(marsDisplay, offset) {
     this.marsDisplay = marsDisplay
     this.offset = offset
@@ -82,6 +94,17 @@ var corewar = (function () {
     }
     return 'black'
   }
+
+  function WarriorInstanceDisplay(marsDisplay, warriorInstanceId) {
+    this.marsDisplay = marsDisplay
+    this.warriorInstanceId = warriorInstanceId
+  }
+
+  Object.defineProperty(WarriorInstanceDisplay.prototype, 'name', {
+    'get': function () {
+      return this.marsDisplay.mars.warriorsInstances[this.warriorInstanceId].warrior.name
+    }
+  })
 
   function Mars(size) {
     this.core = []
