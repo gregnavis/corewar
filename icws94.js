@@ -48,6 +48,8 @@ var corewar = (function () {
     for (var i = 0; i < mars.core.length; i++) {
       this.cellDisplays.push(new CellDisplay(this, i))
     }
+
+    this._warriorInstanceDisplays = []
   }
 
   MarsDisplay.prototype.colors = [
@@ -61,13 +63,10 @@ var corewar = (function () {
 
   Object.defineProperty(MarsDisplay.prototype, 'warriorInstanceDisplays', {
     'get': function () {
-      var warriorInstanceDisplays = []
-
-      for (var i = 0; i < this.mars.warriorsInstances.length; i++) {
-        warriorInstanceDisplays.push(new WarriorInstanceDisplay(this, i))
+      for (var i = this._warriorInstanceDisplays.length; i < this.mars.warriorsInstances.length; i++) {
+        this._warriorInstanceDisplays.push(new WarriorInstanceDisplay(this, i))
       }
-
-      return warriorInstanceDisplays
+      return this._warriorInstanceDisplays
     }
   })
 
