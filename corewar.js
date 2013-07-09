@@ -21,26 +21,41 @@ function WarriorsController($scope) {
 function BattleController($scope, $timeout) {
   var startTimeout
 
+  function isPlayable() {
+    return $scope.mars.warriorsInstances.length >= 2
+  }
+
+  function isStarted() {
+    return undefined !== startTimeout
+  }
+
   $scope.start = function () {
     startTimeout = $timeout(function tick() {
       $scope.mars.step()
-      $("#mars-start").hide()
-      $("#mars-step").hide()
-      $("#mars-stop").show()
       startTimeout = $timeout(tick, delay)
     }, delay)
+  }
+
+  $scope.canStart = function () {
+    return isPlayable() && !isStarted()
   }
 
   $scope.stop = function () {
     if (undefined !== startTimeout) {
       $timeout.cancel(startTimeout)
+      startTimeout = undefined
     }
-    $("#mars-start").show()
-    $("#mars-step").show()
-    $("#mars-stop").hide()
+  }
+
+  $scope.canStop = function () {
+    return isPlayable() && isStarted()
   }
 
   $scope.step = function () {
     $scope.mars.step()
+  }
+
+  $scope.canStep = function () {
+    return $scope.canStart()
   }
 }

@@ -11,14 +11,14 @@
     <script src="corewar.js" type="text/javascript"></script>
   </head>
 
-  <body ng-controller="CorewarController" ng-init="stop()">
+  <body ng-controller="CorewarController">
     <div class="container">
       <header>
         <h1>Memory Array Redcode Simulator</h1>
       </header>
 
-      <div ng-controller="WarriorsController" class="row" id="step-warriors">
-        <div class="span12">
+      <div class="row">
+        <div ng-controller="WarriorsController" class="span3">
           <h2>Warriors</h2>
 
           <ul ng-show="mars.warriorsInstances.length">
@@ -26,14 +26,11 @@
           </ul>
 
           <form>
-            <label for="file">Load another warrior:</label>
             <input id="file" type="file" onchange="angular.element(this).scope().load(this)">
           </form>
         </div>
-      </div>
 
-      <div ng-controller="BattleController" class="row" id="step-battle">
-        <div class="span12">
+        <div ng-controller="BattleController" class="span9">
           <h2>The battle!</h2>
 
           <div id="mars">
@@ -41,9 +38,9 @@
           </div>
 
           <div id="control">
-            <button ng-click="start()" class="btn btn-primary" id="mars-start">Start</button>
-            <button ng-click="stop()" class="btn btn-primary" id="mars-stop">Stop</button>
-            <button class="btn" id="mars-step" ng-click="step()">Step</button>
+            <button ng-click="start()" ng-disabled="!canStart()" class="btn btn-primary">Start</button>
+            <button ng-click="stop()" ng-disabled="!canStop()" class="btn">Stop</button>
+            <button ng-click="step()" ng-disabled="!canStep()" class="btn">Step</button>
           </div>
         </div>
       </div>
