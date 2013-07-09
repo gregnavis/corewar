@@ -105,10 +105,20 @@ var corewar = (function () {
     }
   })
 
+  Object.defineProperty(WarriorInstanceDisplay.prototype, 'style', {
+    'get': function () {
+      return {
+        'background': this.marsDisplay.colors[this.warriorInstanceId],
+        'display': 'inline-block',
+        'height': '12px',
+        'width': '12px'
+      }
+    }
+  })
+
   function Mars(size) {
     this.core = []
     this.warriorsInstances = []
-    this.nextWarriorId = 1
 
     for (var i = 0; i < size; i++) {
       this.core[i] = new Cell(Mars.initialInstruction.copy())
@@ -128,18 +138,14 @@ var corewar = (function () {
 
   Mars.prototype.loadWarriorFromSource = function (name, source) {
     var compiler = new Compiler()
-    var warrior = new Warrior(this.nextWarriorId, name, compiler.compile(source))
+    var warrior = new Warrior(this.warriorsInstances.length,
+      name,
+      compiler.compile(source))
     this.spawn(warrior)
   }
 
   Mars.prototype.spawn = function (warrior) {
-    var freeOffsets = this.findFreeOffsets(warrior.instructions.length)
-
-    if (!freeOffsets.length) {
-      throw "No free offsets!"
-    }
-
-    var offset = freeOffsets[Math.floor(Math.random() * freeOffsets.length)]
+    var offset = this.randomFreeOffsetFor(warrior)
     var warriorInstance = new WarriorInstance(this.warriorsInstances.length,
       warrior,
       [offset])
@@ -152,6 +158,14 @@ var corewar = (function () {
       cell.instruction = instruction.copy()
       cell.modifiedBy = warriorInstance
     }
+  }
+
+  Mars.prototype.randomFreeOffsetFor = function (warrior) {
+    var freeOffsets = this.findFreeOffsets(warrior.instructions.length)
+    if (!freeOffsets.length) {
+      throw "No free offsets!"
+    }
+    return freeOffsets[Math.floor(Math.random() * freeOffsets.length)]
   }
 
   Mars.prototype.findFreeOffsets = function (length) {

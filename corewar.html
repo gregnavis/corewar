@@ -22,7 +22,9 @@
           <h2>Warriors</h2>
 
           <ul ng-show="marsDisplay.warriorInstanceDisplays.length">
-            <li ng-repeat="warriorInstanceDisplay in marsDisplay.warriorInstanceDisplays">{{warriorInstanceDisplay.name}}</li>
+            <li ng-repeat="warriorInstanceDisplay in marsDisplay.warriorInstanceDisplays">
+              <span ng-style="warriorInstanceDisplay.style"></span>&nbsp;{{warriorInstanceDisplay.name}}
+            </li>
           </ul>
 
           <form>
