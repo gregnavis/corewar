@@ -4,7 +4,6 @@ var delay = 50
 function CorewarController($scope) {
   $scope.mars = new corewar.Mars(size)
   $scope.marsDisplay = new corewar.MarsDisplay($scope.mars)
-  $scope.warriors = $scope.mars.warriors
 }
 
 function WarriorsController($scope) {
