@@ -14,6 +14,8 @@ function WarriorsController($scope) {
       $scope.mars.loadWarriorFromSource(element.files[0].name, reader.result)
     })}
     reader.readAsText(element.files[0])
+
+    $(element).replaceWith($(element).clone(true))
   })}
 }
 
