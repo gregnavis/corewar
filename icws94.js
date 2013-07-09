@@ -175,7 +175,7 @@ var corewar = (function () {
       var free = true
 
       for (var j = 0; j < length; j++) {
-        if (!this.core[(i + j) % this.core.length].instruction.isEqual(Mars.initialInstruction)) {
+        if (null === this.core[(i + j) % this.core.length].instruction.modifiedBy) {
           free = false
           break
         }
