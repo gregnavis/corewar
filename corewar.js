@@ -1,11 +1,18 @@
 var size = 100
 var delay = 50
 
+/*
+ * The root controller containing the MARS. It is shared between the
+ * WarriorsController and BattleController. The former spawns new warriors.
+ * The latter runs the battle.
+ */
 function CorewarController($scope) {
   $scope.mars = new corewar.Mars(size)
-  $scope.marsDisplay = new corewar.MarsDisplay($scope.mars)
 }
 
+/*
+ * The WarriorsController is responsible for spawning warriors read from files.
+ */
 function WarriorsController($scope) {
   $scope.load = function (element) { $scope.$apply(function () {
     var reader = new FileReader()
@@ -18,8 +25,13 @@ function WarriorsController($scope) {
   })}
 }
 
+/*
+ * The BattleController is responsible for running and presenting the battle.
+ */
 function BattleController($scope, $timeout) {
   var startTimeout
+
+  $scope.marsDisplay = new corewar.MarsDisplay($scope.mars)
 
   function isPlayable() {
     return $scope.mars.warriorsInstances.length >= 2
